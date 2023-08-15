@@ -1,24 +1,9 @@
-/*import { Contract, Wallet } from 'ethers'
-import { Web3Provider } from 'ethers/providers'
-import { deployContract } from 'ethereum-waffle'
-
+import { ethers } from "hardhat";
+import {BigNumber, Contract, Wallet} from 'ethers'
 import { expandTo18Decimals } from './utilities'
-
-import ERC20 from '../../build/ERC20.json'
-import UniswapV2Factory from '../../build/UniswapV2Factory.json'
-import UniswapV2Pair from '../../build/UniswapV2Pair.json'
 
 interface FactoryFixture {
     factory: Contract
-}
-
-const overrides = {
-    gasLimit: 9999999
-}
-
-export async function factoryFixture(_: Web3Provider, [wallet]: Wallet[]): Promise<FactoryFixture> {
-    const factory = await deployContract(wallet, UniswapV2Factory, [wallet.address], overrides)
-    return { factory }
 }
 
 interface PairFixture extends FactoryFixture {
@@ -27,26 +12,37 @@ interface PairFixture extends FactoryFixture {
     pair: Contract
 }
 
-let TestERC20: any;
-let TestCFMM: any;
-let TestStrategy: any;
-let TestStrategy2: any;
-let TestStrategy3: any;
-let TestFactory: any;
+const overrides = {
+    gasLimit: 9999999
+}
 
-export async function pairFixture(provider: Web3Provider, [wallet]: Wallet[]): Promise<PairFixture> {
-    const { factory } = await factoryFixture(provider, [wallet])
+let UniswapV2Factory: any;
+let UniswapV2Pair: any;
+let ERC20: any;
 
-    const tokenA = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
-    const tokenB = await deployContract(wallet, ERC20, [expandTo18Decimals(10000)], overrides)
+export async function factoryFixture(wallet: any): Promise<FactoryFixture> {
+    UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory");
+    const factory = await UniswapV2Factory.deploy(wallet.address, overrides);
+    return { factory }
+}
+
+export async function pairFixture(wallet: any): Promise<PairFixture> {
+    const { factory } = await factoryFixture(wallet);
+
+    ERC20 = await ethers.getContractFactory("ERC20");
+    const tokenA = await ERC20.deploy(expandTo18Decimals(10000), overrides);
+    const tokenB = await ERC20.deploy(expandTo18Decimals(10000), overrides);
 
     await factory.createPair(tokenA.address, tokenB.address, overrides)
     const pairAddress = await factory.getPair(tokenA.address, tokenB.address)
-    const pair = new Contract(pairAddress, JSON.stringify(UniswapV2Pair.abi), provider).connect(wallet)
 
-    const token0Address = (await pair.token0()).address
-    const token0 = tokenA.address === token0Address ? tokenA : tokenB
-    const token1 = tokenA.address === token0Address ? tokenB : tokenA
+    UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair");
+    const pair = UniswapV2Pair.attach(pairAddress);
+
+    const token0Address = (await pair.token0())
+    const tokenAisToken0 = BigNumber.from(tokenA.address.toString()).eq(BigNumber.from(token0Address));
+    const token0 = tokenAisToken0 ? tokenA : tokenB
+    const token1 = tokenAisToken0 ? tokenB : tokenA
 
     return { factory, token0, token1, pair }
-}/**/
+}

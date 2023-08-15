@@ -1,30 +1,23 @@
-/*import chai, { expect } from 'chai'
-import { Contract } from 'ethers'
-import { MaxUint256 } from 'ethers/constants'
-import { bigNumberify, hexlify, keccak256, defaultAbiCoder, toUtf8Bytes } from 'ethers/utils'
-import { solidity, MockProvider, deployContract } from 'ethereum-waffle'
+import { ethers } from "hardhat";
+import { expect } from 'chai'
+import { BigNumber, Contract, utils, constants } from 'ethers'
 import { ecsign } from 'ethereumjs-util'
 
 import { expandTo18Decimals, getApprovalDigest } from './shared/utilities'
-
-import ERC20 from '../build/ERC20.json'
-
-chai.use(solidity)
 
 const TOTAL_SUPPLY = expandTo18Decimals(10000)
 const TEST_AMOUNT = expandTo18Decimals(10)
 
 describe('UniswapV2ERC20', () => {
-    const provider = new MockProvider({
-        hardfork: 'istanbul',
-        mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-        gasLimit: 9999999
-    })
-    const [wallet, other] = provider.getWallets()
+    let ERC20: any;
+    let wallet: any;
+    let other: any;
+    let token: Contract;
 
-    let token: Contract
     beforeEach(async () => {
-        token = await deployContract(wallet, ERC20, [TOTAL_SUPPLY])
+        [wallet, other] = await ethers.getSigners();
+        ERC20 = await ethers.getContractFactory("ERC20");
+        token = await ERC20.deploy(TOTAL_SUPPLY);
     })
 
     it('name, symbol, decimals, totalSupply, balanceOf, DOMAIN_SEPARATOR, PERMIT_TYPEHASH', async () => {
@@ -35,23 +28,23 @@ describe('UniswapV2ERC20', () => {
         expect(await token.totalSupply()).to.eq(TOTAL_SUPPLY)
         expect(await token.balanceOf(wallet.address)).to.eq(TOTAL_SUPPLY)
         expect(await token.DOMAIN_SEPARATOR()).to.eq(
-            keccak256(
-                defaultAbiCoder.encode(
+            utils.keccak256(
+                utils.defaultAbiCoder.encode(
                     ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
                     [
-                        keccak256(
-                            toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
+                        utils.keccak256(
+                            utils.toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
                         ),
-                        keccak256(toUtf8Bytes(name)),
-                        keccak256(toUtf8Bytes('1')),
-                        1,
+                        utils.keccak256(utils.toUtf8Bytes(name)),
+                        utils.keccak256(utils.toUtf8Bytes('1')),
+                        31337,// chainId
                         token.address
                     ]
                 )
             )
         )
         expect(await token.PERMIT_TYPEHASH()).to.eq(
-            keccak256(toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'))
+            utils.keccak256(utils.toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'))
         )
     })
 
@@ -86,31 +79,34 @@ describe('UniswapV2ERC20', () => {
     })
 
     it('transferFrom:max', async () => {
-        await token.approve(other.address, MaxUint256)
+        await token.approve(other.address, constants.MaxUint256)
         await expect(token.connect(other).transferFrom(wallet.address, other.address, TEST_AMOUNT))
             .to.emit(token, 'Transfer')
             .withArgs(wallet.address, other.address, TEST_AMOUNT)
-        expect(await token.allowance(wallet.address, other.address)).to.eq(MaxUint256)
+        expect(await token.allowance(wallet.address, other.address)).to.eq(constants.MaxUint256)
         expect(await token.balanceOf(wallet.address)).to.eq(TOTAL_SUPPLY.sub(TEST_AMOUNT))
         expect(await token.balanceOf(other.address)).to.eq(TEST_AMOUNT)
     })
 
     it('permit', async () => {
-        const nonce = await token.nonces(wallet.address)
-        const deadline = MaxUint256
+        const path = "m/44'/60'/0'/0/0"; // Default path for the first account
+        const _wallet = ethers.Wallet.fromMnemonic("test test test test test test test test test test test junk", path)
+        expect(_wallet.address).to.equal(wallet.address);
+        const nonce = await token.nonces(_wallet.address)
+        const deadline = constants.MaxUint256
         const digest = await getApprovalDigest(
             token,
-            { owner: wallet.address, spender: other.address, value: TEST_AMOUNT },
+            { owner: _wallet.address, spender: other.address, value: TEST_AMOUNT },
             nonce,
             deadline
         )
 
-        const { v, r, s } = ecsign(Buffer.from(digest.slice(2), 'hex'), Buffer.from(wallet.privateKey.slice(2), 'hex'))
+        const { v, r, s } = ecsign(Buffer.from(digest.slice(2), 'hex'), Buffer.from(_wallet.privateKey.slice(2), 'hex'))
 
-        await expect(token.permit(wallet.address, other.address, TEST_AMOUNT, deadline, v, hexlify(r), hexlify(s)))
+        await expect(token.permit(_wallet.address, other.address, TEST_AMOUNT, deadline, v, utils.hexlify(r), utils.hexlify(s)))
             .to.emit(token, 'Approval')
-            .withArgs(wallet.address, other.address, TEST_AMOUNT)
-        expect(await token.allowance(wallet.address, other.address)).to.eq(TEST_AMOUNT)
-        expect(await token.nonces(wallet.address)).to.eq(bigNumberify(1))
+            .withArgs(_wallet.address, other.address, TEST_AMOUNT)
+        expect(await token.allowance(_wallet.address, other.address)).to.eq(TEST_AMOUNT)
+        expect(await token.nonces(_wallet.address)).to.eq(BigNumber.from(1))
     })
-})/**/
+})

@@ -1,15 +1,9 @@
-/*import chai, { expect } from 'chai'
-import { Contract } from 'ethers'
-import { AddressZero } from 'ethers/constants'
-import { bigNumberify } from 'ethers/utils'
-import { solidity, MockProvider, createFixtureLoader } from 'ethereum-waffle'
+import { ethers } from "hardhat";
+import { expect } from 'chai'
+import { BigNumber, Contract, utils, constants } from 'ethers'
 
 import { getCreate2Address } from './shared/utilities'
 import { factoryFixture } from './shared/fixtures'
-
-import UniswapV2Pair from '../build/UniswapV2Pair.json'
-
-chai.use(solidity)
 
 const TEST_ADDRESSES: [string, string] = [
     '0x1000000000000000000000000000000000000000',
@@ -17,32 +11,30 @@ const TEST_ADDRESSES: [string, string] = [
 ]
 
 describe('UniswapV2Factory', () => {
-    const provider = new MockProvider({
-        hardfork: 'istanbul',
-        mnemonic: 'horn horn horn horn horn horn horn horn horn horn horn horn',
-        gasLimit: 9999999
-    })
-    const [wallet, other] = provider.getWallets()
-    const loadFixture = createFixtureLoader(provider, [wallet, other])
-
+    let UniswapV2Pair: any;
+    let wallet: any;
+    let other: any;
     let factory: Contract
+
     beforeEach(async () => {
-        const fixture = await loadFixture(factoryFixture)
+        UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair");
+        [wallet, other] = await ethers.getSigners();
+        const fixture = await factoryFixture(wallet)
         factory = fixture.factory
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
-        expect(await factory.feeTo()).to.eq(AddressZero)
+        expect(await factory.feeTo()).to.eq(constants.AddressZero)
         expect(await factory.feeToSetter()).to.eq(wallet.address)
         expect(await factory.allPairsLength()).to.eq(0)
     })
 
     async function createPair(tokens: [string, string]) {
-        const bytecode = `0x${UniswapV2Pair.evm.bytecode.object}`
+        const bytecode = `${UniswapV2Pair.bytecode}`
         const create2Address = getCreate2Address(factory.address, tokens, bytecode)
         await expect(factory.createPair(...tokens))
             .to.emit(factory, 'PairCreated')
-            .withArgs(TEST_ADDRESSES[0], TEST_ADDRESSES[1], create2Address, bigNumberify(1))
+            .withArgs(TEST_ADDRESSES[0], TEST_ADDRESSES[1], create2Address, BigNumber.from(1))
 
         await expect(factory.createPair(...tokens)).to.be.reverted // UniswapV2: PAIR_EXISTS
         await expect(factory.createPair(...tokens.slice().reverse())).to.be.reverted // UniswapV2: PAIR_EXISTS
@@ -51,7 +43,7 @@ describe('UniswapV2Factory', () => {
         expect(await factory.allPairs(0)).to.eq(create2Address)
         expect(await factory.allPairsLength()).to.eq(1)
 
-        const pair = new Contract(create2Address, JSON.stringify(UniswapV2Pair.abi), provider)
+        const pair = UniswapV2Pair.attach(create2Address);
         expect(await pair.factory()).to.eq(factory.address)
         expect(await pair.token0()).to.eq(TEST_ADDRESSES[0])
         expect(await pair.token1()).to.eq(TEST_ADDRESSES[1])
@@ -66,9 +58,10 @@ describe('UniswapV2Factory', () => {
     })
 
     it('createPair:gas', async () => {
-        const tx = await factory.createPair(...TEST_ADDRESSES)
+        const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
+        const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(2512920)
+        expect(receipt.gasUsed).to.eq(2030159)
     })
 
     it('setFeeTo', async () => {
@@ -83,4 +76,4 @@ describe('UniswapV2Factory', () => {
         expect(await factory.feeToSetter()).to.eq(other.address)
         await expect(factory.setFeeToSetter(wallet.address)).to.be.revertedWith('UniswapV2: FORBIDDEN')
     })
-})/**/
+})
