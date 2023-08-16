@@ -224,17 +224,17 @@ describe('UniswapV2Pair', () => {
         // swap to a new price eagerly instead of syncing
         await pair.swap(0, expandTo18Decimals(1), wallet.address, '0x', overrides) // make the price nice
 
-        expect(await pair.price0CumulativeLast()).to.eq(initialPrice[0].mul(5))
-        expect(await pair.price1CumulativeLast()).to.eq(initialPrice[1].mul(5))
-        expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 5)
+        expect(await pair.price0CumulativeLast()).to.eq(initialPrice[0].mul(11))
+        expect(await pair.price1CumulativeLast()).to.eq(initialPrice[1].mul(11))
+        expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 11)
 
         await mineBlock(provider, blockTimestamp + 20)
         await pair.sync(overrides)
 
         const newPrice = encodePrice(expandTo18Decimals(6), expandTo18Decimals(2))
-        expect(await pair.price0CumulativeLast()).to.eq(initialPrice[0].mul(5).add(newPrice[0].mul(2)))
-        expect(await pair.price1CumulativeLast()).to.eq(initialPrice[1].mul(5).add(newPrice[1].mul(2)))
-        expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 7)
+        expect(await pair.price0CumulativeLast()).to.eq(initialPrice[0].mul(11).add(newPrice[0].mul(10)))
+        expect(await pair.price1CumulativeLast()).to.eq(initialPrice[1].mul(11).add(newPrice[1].mul(10)))
+        expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 21)
     })
 
     it('feeTo:off', async () => {

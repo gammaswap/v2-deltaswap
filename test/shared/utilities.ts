@@ -70,7 +70,8 @@ export async function getApprovalDigest(
 }
 
 export async function mineBlock(provider: any, timestamp: number): Promise<void> {
-    await provider.send("hardhat_mine", ["0x1", utils.hexlify(timestamp)]);
+    await provider.send("evm_setNextBlockTimestamp", [timestamp]);
+    await provider.send("evm_mine");
 }
 
 export function encodePrice(reserve0: BigNumber, reserve1: BigNumber) {
