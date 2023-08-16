@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from 'chai'
-import { BigNumber, Contract, utils, constants } from 'ethers'
+import { BigNumber, Contract, constants } from 'ethers'
 
 import { expandTo18Decimals, mineBlock, encodePrice } from './shared/utilities'
 import { pairFixture} from './shared/fixtures'

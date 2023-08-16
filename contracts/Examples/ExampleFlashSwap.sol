@@ -4,19 +4,19 @@ pragma solidity =0.6.6;
 import '../interfaces/IUniswapV2Callee.sol';
 
 import '../libraries/UniswapV2Library.sol';
-//import '../interfaces/V1/IUniswapV1Factory.sol';
-//import '../interfaces/V1/IUniswapV1Exchange.sol';
+import '../interfaces/V1/IUniswapV1Factory.sol';
+import '../interfaces/V1/IUniswapV1Exchange.sol';
 import '../interfaces/IUniswapV2Router01.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IWETH.sol';
 
 contract ExampleFlashSwap is IUniswapV2Callee {
-    //IUniswapV1Factory immutable factoryV1;
+    IUniswapV1Factory immutable factoryV1;
     address immutable factory;
     IWETH immutable WETH;
 
     constructor(address _factory, address _factoryV1, address router) public {
-        //factoryV1 = IUniswapV1Factory(_factoryV1);
+        factoryV1 = IUniswapV1Factory(_factoryV1);
         factory = _factory;
         WETH = IWETH(IUniswapV2Router01(router).WETH());
     }
@@ -43,7 +43,7 @@ contract ExampleFlashSwap is IUniswapV2Callee {
 
         assert(path[0] == address(WETH) || path[1] == address(WETH)); // this strategy only works with a V2 WETH pair
         IERC20 token = IERC20(path[0] == address(WETH) ? path[1] : path[0]);
-        /*IUniswapV1Exchange exchangeV1 = IUniswapV1Exchange(factoryV1.getExchange(address(token))); // get V1 exchange
+        IUniswapV1Exchange exchangeV1 = IUniswapV1Exchange(factoryV1.getExchange(address(token))); // get V1 exchange
 
         if (amountToken > 0) {
             (uint minETH) = abi.decode(data, (uint)); // slippage parameter for V1, passed in by caller
@@ -63,6 +63,6 @@ contract ExampleFlashSwap is IUniswapV2Callee {
             assert(amountReceived > amountRequired); // fail if we didn't get enough tokens back to repay our flash loan
             assert(token.transfer(msg.sender, amountRequired)); // return tokens to V2 pair
             assert(token.transfer(sender, amountReceived - amountRequired)); // keep the rest! (tokens)
-        }/**/
+        }
     }
 }
