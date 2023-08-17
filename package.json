@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "GammaSwap feeless spot dex",
   "main": "index.js",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@gammaswap"
+  },
   "engines": {
     "node": ">=16"
   },
@@ -10,11 +13,14 @@
     "type": "git",
     "url": "https://github.com/gammaswap/v1-dex"
   },
+  "scripts": {
+    "hardhat": "hardhat",
+    "test": "hardhat test"
+  },
   "author": "Daniel Alcarraz <dalcarraz@gammaswap.com>",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
-    "@nomicfoundation/hardhat-foundry": "^1.0.1",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.0.6",

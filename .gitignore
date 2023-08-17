@@ -135,6 +135,7 @@ coverage
 coverage.json
 typechain
 typechain-types
+cache_forge
 
 # Hardhat files
 cache
