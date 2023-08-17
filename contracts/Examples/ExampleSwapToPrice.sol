@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import '../interfaces/IUniswapV2Pair.sol';
-import '../libraries/Babylonian.sol';
-import '../libraries/TransferHelper.sol';
+import './libraries/Babylonian.sol';
+import './libraries/UniswapV2LiquidityMathLibrary.sol';
 
-import '../libraries/UniswapV2LiquidityMathLibrary.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IUniswapV2Router01.sol';
-import '../libraries/SafeMath.sol';
+import '../interfaces/IUniswapV2Pair.sol';
+import '../libraries/TransferHelper.sol';
 import '../libraries/UniswapV2Library.sol';
 
 contract ExampleSwapToPrice {
-    using SafeMath for uint256;
 
     IUniswapV2Router01 public immutable router;
     address public immutable factory;

@@ -6,12 +6,10 @@ import './libraries/TransferHelper.sol';
 
 import './interfaces/IUniswapV2Router02.sol';
 import './libraries/UniswapV2Library.sol';
-import './libraries/SafeMath.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
 contract UniswapV2Router02 is IUniswapV2Router02 {
-    using SafeMath for uint256;
 
     address public immutable override factory;
     address public immutable override WETH;
@@ -329,7 +327,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
             { // scope to avoid stack too deep errors
                 (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
                 (uint256 reserveInput, uint256 reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-                amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
+                amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput;
                 amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
             }
             (uint256 amount0Out, uint256 amount1Out) = input == token0 ? (uint256(0), amountOutput) : (amountOutput, uint256(0));
@@ -350,7 +348,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
@@ -373,7 +371,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }

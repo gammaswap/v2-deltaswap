@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
+import './libraries/FixedPoint.sol';
+import './libraries/UniswapV2OracleLibrary.sol';
+
 import '../interfaces/IUniswapV2Factory.sol';
 import '../interfaces/IUniswapV2Pair.sol';
-import '../libraries/FixedPoint.sol';
-
-import '../libraries/UniswapV2OracleLibrary.sol';
 import '../libraries/UniswapV2Library.sol';
 
 // fixed window oracle that recomputes the average price for the entire period once every period

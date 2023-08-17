@@ -166,7 +166,7 @@ describe('ExampleSwapToPrice', () => {
                 .withArgs(pair.address, wallet.address, '451039908682851138')
         })
 
-        it.skip('swap gas cost', async () => {
+        it('swap gas cost', async () => {
             const tx = await swapToPriceExample.swapToPrice(
                 token0.address,
                 token1.address,
@@ -179,7 +179,7 @@ describe('ExampleSwapToPrice', () => {
                 overrides
             )
             const receipt = await tx.wait()
-            expect(receipt.gasUsed).to.eq('165280')
+            expect(receipt.gasUsed).to.eq('161823')
         }).retries(2) // gas test is inconsistent
     })
 })

@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
+import './libraries/FixedPoint.sol';
+import './libraries/UniswapV2OracleLibrary.sol';
+
 import '../interfaces/IUniswapV2Factory.sol';
 import '../interfaces/IUniswapV2Pair.sol';
-import '../libraries/FixedPoint.sol';
-
-import '../libraries/SafeMath.sol';
 import '../libraries/UniswapV2Library.sol';
-import '../libraries/UniswapV2OracleLibrary.sol';
 
 // sliding window oracle that uses observations collected over a window to provide moving price averages in the past
 // `windowSize` with a precision of `windowSize / granularity`
@@ -15,7 +14,6 @@ import '../libraries/UniswapV2OracleLibrary.sol';
 // differs from the simple oracle which must be deployed once per pair.
 contract ExampleSlidingWindowOracle {
     using FixedPoint for *;
-    using SafeMath for uint256;
 
     struct Observation {
         uint256 timestamp;

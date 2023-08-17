@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import '../libraries/UniswapV2LiquidityMathLibrary.sol';
-//import "hardhat/console.sol";
+import './libraries/UniswapV2LiquidityMathLibrary.sol';
+
 contract ExampleComputeLiquidityValue {
-    using SafeMath for uint256;
 
     address public immutable factory;
 
@@ -19,12 +18,6 @@ contract ExampleComputeLiquidityValue {
         uint256 truePriceTokenA,
         uint256 truePriceTokenB
     ) external view returns (uint256 reserveA, uint256 reserveB) {
-        /*console.log("getReservesAfterArbitrage");
-        console.log(tokenA);
-        console.log(tokenB);
-        (reserveA, reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
-        console.log(reserveA);
-        console.log(reserveB);/**/
         return UniswapV2LiquidityMathLibrary.getReservesAfterArbitrage(
             factory,
             tokenA,
