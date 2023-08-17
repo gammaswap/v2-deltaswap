@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3
-pragma solidity =0.6.6;
+pragma solidity =0.8.17;
 
 import '../interfaces/IUniswapV2Factory.sol';
 import '../interfaces/IUniswapV2Pair.sol';
@@ -15,17 +15,17 @@ import '../libraries/UniswapV2OracleLibrary.sol';
 // differs from the simple oracle which must be deployed once per pair.
 contract ExampleSlidingWindowOracle {
     using FixedPoint for *;
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     struct Observation {
-        uint timestamp;
-        uint price0Cumulative;
-        uint price1Cumulative;
+        uint256 timestamp;
+        uint256 price0Cumulative;
+        uint256 price1Cumulative;
     }
 
     address public immutable factory;
     // the desired amount of time over which the moving average should be computed, e.g. 24 hours
-    uint public immutable windowSize;
+    uint256 public immutable windowSize;
     // the number of observations stored for each pair, i.e. how many price observations are stored for the window.
     // as granularity increases from 1, more frequent updates are needed, but moving averages become more precise.
     // averages are computed over intervals with sizes in the range:
@@ -35,12 +35,12 @@ contract ExampleSlidingWindowOracle {
     //   [now - [22 hours, 24 hours], now]
     uint8 public immutable granularity;
     // this is redundant with granularity and windowSize, but stored for gas savings & informational purposes.
-    uint public immutable periodSize;
+    uint256 public immutable periodSize;
 
     // mapping from pair address to a list of price observations of that pair
     mapping(address => Observation[]) public pairObservations;
 
-    constructor(address factory_, uint windowSize_, uint8 granularity_) public {
+    constructor(address factory_, uint256 windowSize_, uint8 granularity_) {
         require(granularity_ > 1, 'SlidingWindowOracle: GRANULARITY');
         require(
             (periodSize = windowSize_ / granularity_) * granularity_ == windowSize_,
@@ -52,8 +52,8 @@ contract ExampleSlidingWindowOracle {
     }
 
     // returns the index of the observation corresponding to the given timestamp
-    function observationIndexOf(uint timestamp) public view returns (uint8 index) {
-        uint epochPeriod = timestamp / periodSize;
+    function observationIndexOf(uint256 timestamp) public view returns (uint8 index) {
+        uint256 epochPeriod = timestamp / periodSize;
         return uint8(epochPeriod % granularity);
     }
 
@@ -71,7 +71,7 @@ contract ExampleSlidingWindowOracle {
         address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
 
         // populate the array with empty observations (first call only)
-        for (uint i = pairObservations[pair].length; i < granularity; i++) {
+        for (uint256 i = pairObservations[pair].length; i < granularity; i++) {
             pairObservations[pair].push();
         }
 
@@ -80,9 +80,9 @@ contract ExampleSlidingWindowOracle {
         Observation storage observation = pairObservations[pair][observationIndex];
 
         // we only want to commit updates once per period (i.e. windowSize / granularity)
-        uint timeElapsed = block.timestamp - observation.timestamp;
+        uint256 timeElapsed = block.timestamp - observation.timestamp;
         if (timeElapsed > periodSize) {
-            (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
+            (uint256 price0Cumulative, uint256 price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
             observation.timestamp = block.timestamp;
             observation.price0Cumulative = price0Cumulative;
             observation.price1Cumulative = price1Cumulative;
@@ -92,9 +92,9 @@ contract ExampleSlidingWindowOracle {
     // given the cumulative prices of the start and end of a period, and the length of the period, compute the average
     // price in terms of how much amount out is received for the amount in
     function computeAmountOut(
-        uint priceCumulativeStart, uint priceCumulativeEnd,
-        uint timeElapsed, uint amountIn
-    ) private pure returns (uint amountOut) {
+        uint256 priceCumulativeStart, uint256 priceCumulativeEnd,
+        uint256 timeElapsed, uint256 amountIn
+    ) private pure returns (uint256 amountOut) {
         // overflow is desired.
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(
             uint224((priceCumulativeEnd - priceCumulativeStart) / timeElapsed)
@@ -105,16 +105,16 @@ contract ExampleSlidingWindowOracle {
     // returns the amount out corresponding to the amount in for a given token using the moving average over the time
     // range [now - [windowSize, windowSize - periodSize * 2], now]
     // update must have been called for the bucket corresponding to timestamp `now - windowSize`
-    function consult(address tokenIn, uint amountIn, address tokenOut) external view returns (uint amountOut) {
+    function consult(address tokenIn, uint256 amountIn, address tokenOut) external view returns (uint256 amountOut) {
         address pair = UniswapV2Library.pairFor(factory, tokenIn, tokenOut);
         Observation storage firstObservation = getFirstObservationInWindow(pair);
 
-        uint timeElapsed = block.timestamp - firstObservation.timestamp;
+        uint256 timeElapsed = block.timestamp - firstObservation.timestamp;
         require(timeElapsed <= windowSize, 'SlidingWindowOracle: MISSING_HISTORICAL_OBSERVATION');
         // should never happen.
         require(timeElapsed >= windowSize - periodSize * 2, 'SlidingWindowOracle: UNEXPECTED_TIME_ELAPSED');
 
-        (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
+        (uint256 price0Cumulative, uint256 price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(pair);
         (address token0,) = UniswapV2Library.sortTokens(tokenIn, tokenOut);
 
         if (token0 == tokenIn) {

@@ -65,7 +65,7 @@ describe('ExampleFlashSwap', () => {
             amount0,
             amount1,
             flashSwapExample.address,
-            utils.defaultAbiCoder.encode(['uint'], [BigNumber.from(1)]),
+            utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from(1)]),
             overrides
         )
 
@@ -118,7 +118,7 @@ describe('ExampleFlashSwap', () => {
             amount0,
             amount1,
             flashSwapExample.address,
-            utils.defaultAbiCoder.encode(['uint'], [BigNumber.from(1)]),
+            utils.defaultAbiCoder.encode(['uint256'], [BigNumber.from(1)]),
             overrides
         )
 
