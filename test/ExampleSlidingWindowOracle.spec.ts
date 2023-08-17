@@ -356,7 +356,8 @@ describe('ExampleSlidingWindowOracle', () => {
             })
 
             // Consult throws error MISSING_HISTORICAL_OBSERVATION because the timeElapsed > windowSize when going to hour 32
-            // This happens because firstIndex at hour 32 is too far back from current time. Therefore we skip
+            // This happens because firstIndex at hour 32 is too far back from current time. Therefore, we skip
+            // Must figure out first, what they're actually testing here to fix this test. Might need to change ExampleSlidingWindowOracle.sol
             // price has been 2:1 all of 23 hours
             describe.skip('hour 32', () => {
                 beforeEach('set hour 32', async function () {
