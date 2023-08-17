@@ -355,6 +355,8 @@ describe('ExampleSlidingWindowOracle', () => {
                 expect(await slidingWindowOracle.consult(token1.address, 100, token0.address)).to.eq(200)
             })
 
+            // Consult throws error MISSING_HISTORICAL_OBSERVATION because the timeElapsed > windowSize when going to hour 32
+            // This happens because firstIndex at hour 32 is too far back from current time. Therefore we skip
             // price has been 2:1 all of 23 hours
             describe.skip('hour 32', () => {
                 beforeEach('set hour 32', async function () {
