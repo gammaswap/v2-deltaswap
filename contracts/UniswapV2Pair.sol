@@ -105,10 +105,15 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     function _calcTradingFee(uint256 liquidityTraded) internal virtual returns(uint256) {
         (uint256 tradeSum, uint256 lastLiquidityTradedEMA) = _updateVolumeEMA(liquidityTraded);
         lastLiquidityTradedEMA = Statistics.calcEMA(tradeSum, lastLiquidityTradedEMA, 20);
-        if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge fee
-            return 3;
+        if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
+            if(lastLiquidityTradedEMA >= liquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
+                return 3;
+            } else if(lastLiquidityTradedEMA >= liquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+                return 3;//10;
+            }
+            return 3;//1
         }
-        return 3;
+        return 3;//0
     }
 
     function _updateVolumeEMA(uint256 liquidityTraded) internal virtual returns(uint256 tradeSum, uint256 lastLiquidityTradedEMA){
@@ -207,9 +212,8 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external override lock {
         require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
-        uint112[] memory _reserve = new uint112[](2);
-        (_reserve[0], _reserve[1],) = getReserves(); // gas savings
-        require(amount0Out < _reserve[0] && amount1Out < _reserve[1], 'UniswapV2: INSUFFICIENT_LIQUIDITY');
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
+        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY');
 
         uint256 balance0;
         uint256 balance1;
@@ -223,20 +227,20 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
             balance0 = IERC20(_token0).balanceOf(address(this));
             balance1 = IERC20(_token1).balanceOf(address(this));
         }
-        uint256 amount0In = balance0 > _reserve[0] - amount0Out ? balance0 - (_reserve[0] - amount0Out) : 0;
-        uint256 amount1In = balance1 > _reserve[1] - amount1Out ? balance1 - (_reserve[1] - amount1Out) : 0;
+        uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
+        uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint256 fee = 0;
             if(!isGammaPoolAddress(msg.sender)) {
                 fee = _calcTradingFee(Math.sqrt((amount0In + amount1In)*(amount0Out + amount1Out)));
             }
-            uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;//3;
-            uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;//3;
-            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve[0]) * _reserve[1] * (1000**2), 'UniswapV2: K');
+            uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;
+            uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;
+            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (1000**2), 'UniswapV2: K');
         }
 
-        _update(balance0, balance1, _reserve[0], _reserve[1]);
+        _update(balance0, balance1, _reserve0, _reserve1);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
 

@@ -371,8 +371,8 @@ describe('UniswapV2Router{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.UniswapV2Router01]: 156391,
-                            [RouterVersion.UniswapV2Router02]: 156468
+                            [RouterVersion.UniswapV2Router01]: 156085,
+                            [RouterVersion.UniswapV2Router02]: 156174
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
@@ -520,8 +520,8 @@ describe('UniswapV2Router{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.UniswapV2Router01]: 159899,
-                            [RouterVersion.UniswapV2Router02]: 159921
+                            [RouterVersion.UniswapV2Router01]: 159651,
+                            [RouterVersion.UniswapV2Router02]: 159685
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
