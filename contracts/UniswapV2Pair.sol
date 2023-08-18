@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.16;
 
+import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
+import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
+
 import './interfaces/IUniswapV2Pair.sol';
 import './UniswapV2ERC20.sol';
 import './libraries/Math.sol';
+import './libraries/Statistics.sol';
 import './libraries/UQ112x112.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IUniswapV2Factory.sol';
@@ -18,6 +22,18 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     address public override factory;
     address public override token0;
     address public override token1;
+
+    address public override gsFactory;
+    uint16 public override protocolId;
+    address public override implementation;
+    bytes32 public override gsPoolKey;
+
+    uint112 private liquidityEMA;
+    uint32 private lastLiquidityBlockNumber;
+
+    uint112 private lastTradeSum;
+    uint112 private liquidityTradedEMA;
+    uint32 private lastTradeBlockNumber;
 
     uint112 private reserve0;           // uses single storage slot, accessible via getReserves
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
@@ -57,6 +73,15 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         token1 = _token1;
     }
 
+    // called once by the factory at time of deployment
+    function setGSProtocol(address _gsFactory, uint16 _protocolId) external override {
+        require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
+        gsFactory = _gsFactory;
+        protocolId = _protocolId;
+        implementation = IGammaPoolFactory(_gsFactory).getProtocol(_protocolId);
+        gsPoolKey = AddressCalculator.getGammaPoolKey(address(this), _protocolId);
+    }
+
     // update reserves and, on the first call per block, price accumulators
     function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
         require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'UniswapV2: OVERFLOW');
@@ -67,10 +92,42 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
             price0CumulativeLast += uint256(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
             price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
         }
+        if(block.number != lastLiquidityBlockNumber) {
+            liquidityEMA = uint112(Statistics.calcEMA(Math.sqrt(balance0 * balance1), liquidityEMA, 10));
+            lastLiquidityBlockNumber = uint32(block.number);
+        }
         reserve0 = uint112(balance0);
         reserve1 = uint112(balance1);
         blockTimestampLast = blockTimestamp;
         emit Sync(reserve0, reserve1);
+    }
+
+    function _calcTradingFee(uint256 liquidityTraded) internal virtual returns(uint256) {
+        (uint256 tradeSum, uint256 lastLiquidityTradedEMA) = _updateVolumeEMA(liquidityTraded);
+        lastLiquidityTradedEMA = Statistics.calcEMA(tradeSum, lastLiquidityTradedEMA, 20);
+        if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge fee
+            return 3;
+        }
+        return 3;
+    }
+
+    function _updateVolumeEMA(uint256 liquidityTraded) internal virtual returns(uint256 tradeSum, uint256 lastLiquidityTradedEMA){
+        uint256 blockDiff = block.number - lastTradeBlockNumber;
+        if(blockDiff > 0) {
+            if(blockDiff > 50) {
+                // if no trade in 50 blocks (~10 minutes), then reset
+                lastLiquidityTradedEMA = 0;
+            } else {
+                lastLiquidityTradedEMA = uint112(Statistics.calcEMA(lastTradeSum, liquidityTradedEMA, 20));
+            }
+            lastTradeBlockNumber = uint32(block.number);
+            liquidityTradedEMA = uint112(lastLiquidityTradedEMA);
+        } else {
+            liquidityTraded = lastTradeSum + liquidityTraded;
+            lastLiquidityTradedEMA = liquidityTradedEMA;
+        }
+        tradeSum = liquidityTraded;
+        lastTradeSum = uint112(tradeSum);
     }
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
@@ -143,11 +200,16 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
+    function isGammaPoolAddress(address _sender) internal virtual view returns(bool) {
+        return _sender == AddressCalculator.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+    }
+
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external override lock {
         require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
-        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
-        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY');
+        uint112[] memory _reserve = new uint112[](2);
+        (_reserve[0], _reserve[1],) = getReserves(); // gas savings
+        require(amount0Out < _reserve[0] && amount1Out < _reserve[1], 'UniswapV2: INSUFFICIENT_LIQUIDITY');
 
         uint256 balance0;
         uint256 balance1;
@@ -161,16 +223,20 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
             balance0 = IERC20(_token0).balanceOf(address(this));
             balance1 = IERC20(_token1).balanceOf(address(this));
         }
-        uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
-        uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
+        uint256 amount0In = balance0 > _reserve[0] - amount0Out ? balance0 - (_reserve[0] - amount0Out) : 0;
+        uint256 amount1In = balance1 > _reserve[1] - amount1Out ? balance1 - (_reserve[1] - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
-            uint256 balance0Adjusted = balance0 * 1000 - amount0In * 3;
-            uint256 balance1Adjusted = balance1 * 1000 - amount1In * 3;
-            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (1000**2), 'UniswapV2: K');
+            uint256 fee = 0;
+            if(!isGammaPoolAddress(msg.sender)) {
+                fee = _calcTradingFee(Math.sqrt((amount0In + amount1In)*(amount0Out + amount1Out)));
+            }
+            uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;//3;
+            uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;//3;
+            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve[0]) * _reserve[1] * (1000**2), 'UniswapV2: K');
         }
 
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(balance0, balance1, _reserve[0], _reserve[1]);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
 
