@@ -19,14 +19,15 @@ library UniswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'6689ac28bf6f176778c3cde09b4560f7fc69d2e9bd43d58aa8530ce953028926' // init code hash
+                hex'e84669c9c3f203f86ec8bd3e385083534ead9486e7da1b30d70b558ac491ef21' // init code hash
             )))));
     }
 
     // fetches and sorts the reserves for a pair
-    function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint256 reserveA, uint256 reserveB) {
+    function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint256 reserveA, uint256 reserveB, address pair) {
         (address token0,) = sortTokens(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReserves();
+        pair = pairFor(factory, tokenA, tokenB);
+        (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(pair).getReserves();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
@@ -62,7 +63,7 @@ library UniswapV2Library {
         amounts = new uint256[](path.length);
         amounts[0] = amountIn;
         for (uint256 i; i < path.length - 1; i++) {
-            (uint256 reserveIn, uint256 reserveOut) = getReserves(factory, path[i], path[i + 1]);
+            (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i], path[i + 1]);
             amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
@@ -73,7 +74,7 @@ library UniswapV2Library {
         amounts = new uint256[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint256 i = path.length - 1; i > 0; i--) {
-            (uint256 reserveIn, uint256 reserveOut) = getReserves(factory, path[i - 1], path[i]);
+            (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i - 1], path[i]);
             amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
         }
     }

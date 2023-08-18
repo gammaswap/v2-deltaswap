@@ -102,7 +102,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         emit Sync(reserve0, reserve1);
     }
 
-    function _calcTradingFee(uint256 liquidityTraded) internal virtual returns(uint256) {
+    function _calcTradingFee(uint256 liquidityTraded) public virtual returns(uint256) {
         (uint256 tradeSum, uint256 lastLiquidityTradedEMA) = _updateVolumeEMA(liquidityTraded);
         lastLiquidityTradedEMA = Statistics.calcEMA(tradeSum, lastLiquidityTradedEMA, 20);
         if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change

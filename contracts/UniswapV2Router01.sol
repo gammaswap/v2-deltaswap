@@ -39,7 +39,7 @@ contract UniswapV2Router01 is IUniswapV2Router01 {
         if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
             IUniswapV2Factory(factory).createPair(tokenA, tokenB);
         }
-        (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
+        (uint256 reserveA, uint256 reserveB,) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
