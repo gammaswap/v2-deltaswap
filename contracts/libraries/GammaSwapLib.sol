@@ -1,7 +1,19 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity ^0.8.0;
 
+import './Math.sol';
+
 library GammaSwapLib {
+
+    function calcTradeLiquidity(uint256 amount0, uint256 amount1, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {
+        if(amount0 > 0) {
+            return Math.sqrt(amount0 * amount0 * reserve1 / reserve0);
+        } else if(amount1 > 0) {
+            return Math.sqrt(amount1 * amount1 * reserve0 / reserve1);
+        }
+        return 0;
+    }
+
     /// @dev Update pool invariant, LP tokens borrowed plus interest, interest rate index, and last block update
     /// @param last - last value added to ema calculation
     /// @param emaLast - last calculated ema
