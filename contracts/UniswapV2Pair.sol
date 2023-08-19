@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-//import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
-//import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
+import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
+import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
 
 import './interfaces/IUniswapV2Pair.sol';
 import './UniswapV2ERC20.sol';
@@ -78,8 +78,8 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
         gsFactory = _gsFactory;
         protocolId = _protocolId;
-        //implementation = IGammaPoolFactory(_gsFactory).getProtocol(_protocolId);
-        //gsPoolKey = AddressCalculator.getGammaPoolKey(address(this), _protocolId);
+        implementation = IGammaPoolFactory(_gsFactory).getProtocol(_protocolId);
+        gsPoolKey = AddressCalculator.getGammaPoolKey(address(this), _protocolId);
     }
 
     // update reserves and, on the first call per block, price accumulators
