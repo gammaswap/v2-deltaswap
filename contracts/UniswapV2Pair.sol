@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
-import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
-
 import './interfaces/IUniswapV2Pair.sol';
 import './UniswapV2ERC20.sol';
 import './libraries/Math.sol';
-import './libraries/Statistics.sol';
+import './libraries/GammaSwapLib.sol';
 import './libraries/UQ112x112.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IUniswapV2Factory.sol';
@@ -74,12 +71,12 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     // called once by the factory at time of deployment
-    function setGSProtocol(address _gsFactory, uint16 _protocolId) external override {
+    function setGSProtocol(address _gsFactory, address _implementation, uint16 _protocolId) external override {
         require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
         gsFactory = _gsFactory;
         protocolId = _protocolId;
-        implementation = IGammaPoolFactory(_gsFactory).getProtocol(_protocolId);
-        gsPoolKey = AddressCalculator.getGammaPoolKey(address(this), _protocolId);
+        implementation = _implementation;
+        gsPoolKey = keccak256(abi.encode(address(this), _protocolId));
     }
 
     // update reserves and, on the first call per block, price accumulators
@@ -93,7 +90,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
             price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
         }
         if(block.number != lastLiquidityBlockNumber) {
-            liquidityEMA = uint112(Statistics.calcEMA(Math.sqrt(balance0 * balance1), liquidityEMA, 10));
+            liquidityEMA = uint112(GammaSwapLib.calcEMA(Math.sqrt(balance0 * balance1), liquidityEMA, 10));
             lastLiquidityBlockNumber = uint32(block.number);
         }
         reserve0 = uint112(balance0);
@@ -104,7 +101,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
 
     function _calcTradingFee(uint256 liquidityTraded) public virtual returns(uint256) {
         (uint256 tradeSum, uint256 lastLiquidityTradedEMA) = _updateVolumeEMA(liquidityTraded);
-        lastLiquidityTradedEMA = Statistics.calcEMA(tradeSum, lastLiquidityTradedEMA, 20);
+        lastLiquidityTradedEMA = GammaSwapLib.calcEMA(tradeSum, lastLiquidityTradedEMA, 20);
         if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
             if(lastLiquidityTradedEMA >= liquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
                 return 3;
@@ -123,7 +120,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
                 // if no trade in 50 blocks (~10 minutes), then reset
                 lastLiquidityTradedEMA = 0;
             } else {
-                lastLiquidityTradedEMA = uint112(Statistics.calcEMA(lastTradeSum, liquidityTradedEMA, 20));
+                lastLiquidityTradedEMA = uint112(GammaSwapLib.calcEMA(lastTradeSum, liquidityTradedEMA, 20));
             }
             lastTradeBlockNumber = uint32(block.number);
             liquidityTradedEMA = uint112(lastLiquidityTradedEMA);
@@ -206,7 +203,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     function isGammaPoolAddress(address _sender) internal virtual view returns(bool) {
-        return false;//_sender == AddressCalculator.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        return _sender == GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
     }
 
     // this low-level function should be called from a contract which performs important safety checks

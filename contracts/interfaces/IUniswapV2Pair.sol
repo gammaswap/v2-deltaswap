@@ -34,7 +34,7 @@ interface IUniswapV2Pair is IUniswapV2ERC20 {
 
     function initialize(address, address) external;
 
-    function setGSProtocol(address gsFactory, uint16 protocolId) external;
+    function setGSProtocol(address gsFactory, address implementation, uint16 protocolId) external;
     function gsFactory() external view returns (address);
     function gsPoolKey() external view returns (bytes32);
     function protocolId() external view returns (uint16);
