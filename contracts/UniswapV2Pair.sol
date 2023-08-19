@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.16;
 
-import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
-import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
+//import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
+//import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
 
 import './interfaces/IUniswapV2Pair.sol';
 import './UniswapV2ERC20.sol';
@@ -78,8 +78,8 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
         gsFactory = _gsFactory;
         protocolId = _protocolId;
-        implementation = IGammaPoolFactory(_gsFactory).getProtocol(_protocolId);
-        gsPoolKey = AddressCalculator.getGammaPoolKey(address(this), _protocolId);
+        //implementation = IGammaPoolFactory(_gsFactory).getProtocol(_protocolId);
+        //gsPoolKey = AddressCalculator.getGammaPoolKey(address(this), _protocolId);
     }
 
     // update reserves and, on the first call per block, price accumulators
@@ -206,7 +206,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     function isGammaPoolAddress(address _sender) internal virtual view returns(bool) {
-        return _sender == AddressCalculator.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        return false;//_sender == AddressCalculator.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
     }
 
     // this low-level function should be called from a contract which performs important safety checks
