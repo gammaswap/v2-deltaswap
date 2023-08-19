@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.0;
 
+import './GammaSwapLib.sol';
 import '../interfaces/IUniswapV2Pair.sol';
 
 library UniswapV2Library {
@@ -19,7 +20,7 @@ library UniswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'802199547daca809fdea299a33923bc88f868383df84991ab598c156433317bf' // init code hash
+                hex'337772b5677abb7029c46c636531c2caefd7af8ab99ef7b9f28a41917c2a2b67' // init code hash
             )))));
     }
 
@@ -63,7 +64,11 @@ library UniswapV2Library {
         amounts = new uint256[](path.length);
         amounts[0] = amountIn;
         for (uint256 i; i < path.length - 1; i++) {
-            (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i], path[i + 1]);
+            (uint256 reserveIn, uint256 reserveOut, address _pair) = getReserves(factory, path[i], path[i + 1]);
+            uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amounts[i], 0, reserveIn, reserveOut);
+            IUniswapV2Pair pair = IUniswapV2Pair(_pair);
+            (uint256 liquidityTradedEMA,,) = pair.getLastLiquidityTradedEMA(tradeLiquidity);
+            uint256 fee = pair.calcTradingFee(liquidityTradedEMA);
             amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
         }
     }
@@ -74,7 +79,11 @@ library UniswapV2Library {
         amounts = new uint256[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint256 i = path.length - 1; i > 0; i--) {
-            (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i - 1], path[i]);
+            (uint256 reserveIn, uint256 reserveOut, address _pair) = getReserves(factory, path[i - 1], path[i]);
+            uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amounts[i], 0, reserveIn, reserveOut);
+            IUniswapV2Pair pair = IUniswapV2Pair(_pair);
+            (uint256 liquidityTradedEMA,,) = pair.getLastLiquidityTradedEMA(tradeLiquidity);
+            uint256 fee = pair.calcTradingFee(liquidityTradedEMA);
             amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
         }
     }
