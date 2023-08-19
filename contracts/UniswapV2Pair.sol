@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3
-pragma solidity >=0.5.16;
+pragma solidity =0.8.17;
 
 //import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
 //import '@gammaswap/v1-core/contracts/interfaces/IGammaPoolFactory.sol';
