@@ -70,12 +70,6 @@ library UniswapV2Library {
         }
     }
 
-    function calcTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
-        uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
-        (uint256 liquidityTradedEMA,,) = IUniswapV2Pair(pair).getLastLiquidityTradedEMA(tradeLiquidity);
-        fee = IUniswapV2Pair(pair).calcTradingFee(liquidityTradedEMA);
-    }
-
     // performs chained getAmountIn calculations on any number of pairs
     function getAmountsIn(address factory, uint256 amountOut, address[] memory path) internal view returns (uint256[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
@@ -94,5 +88,11 @@ library UniswapV2Library {
             }
             amounts[i - 1] = amountIn;
         }
+    }
+
+    function calcTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
+        uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
+        (uint256 liquidityTradedEMA,,) = IUniswapV2Pair(pair).getLastLiquidityTradedEMA(tradeLiquidity);
+        fee = IUniswapV2Pair(pair).calcTradingFee(liquidityTradedEMA);
     }
 }
