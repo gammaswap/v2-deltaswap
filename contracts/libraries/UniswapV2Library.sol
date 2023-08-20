@@ -64,13 +64,16 @@ library UniswapV2Library {
         amounts = new uint256[](path.length);
         amounts[0] = amountIn;
         for (uint256 i; i < path.length - 1; i++) {
-            (uint256 reserveIn, uint256 reserveOut, address _pair) = getReserves(factory, path[i], path[i + 1]);
-            uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amounts[i], 0, reserveIn, reserveOut);
-            IUniswapV2Pair pair = IUniswapV2Pair(_pair);
-            (uint256 liquidityTradedEMA,,) = pair.getLastLiquidityTradedEMA(tradeLiquidity);
-            uint256 fee = pair.calcTradingFee(liquidityTradedEMA);
+            (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i], path[i + 1]);
+            uint256 fee = calcTradingFee(amounts[i], reserveIn, reserveOut, pair);
             amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
         }
+    }
+
+    function calcTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
+        uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
+        (uint256 liquidityTradedEMA,,) = IUniswapV2Pair(pair).getLastLiquidityTradedEMA(tradeLiquidity);
+        fee = IUniswapV2Pair(pair).calcTradingFee(liquidityTradedEMA);
     }
 
     // performs chained getAmountIn calculations on any number of pairs
@@ -79,12 +82,17 @@ library UniswapV2Library {
         amounts = new uint256[](path.length);
         amounts[amounts.length - 1] = amountOut;
         for (uint256 i = path.length - 1; i > 0; i--) {
-            (uint256 reserveIn, uint256 reserveOut, address _pair) = getReserves(factory, path[i - 1], path[i]);
-            uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amounts[i], 0, reserveIn, reserveOut);
-            IUniswapV2Pair pair = IUniswapV2Pair(_pair);
-            (uint256 liquidityTradedEMA,,) = pair.getLastLiquidityTradedEMA(tradeLiquidity);
-            uint256 fee = pair.calcTradingFee(liquidityTradedEMA);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+            (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i - 1], path[i]);
+            uint256 fee;
+            uint256 _fee = 3;
+            uint256 amountIn;
+            while(true) {
+                fee = _fee;
+                amountIn = getAmountIn(amounts[i], reserveIn, reserveOut);
+                _fee = calcTradingFee(amountIn, reserveIn, reserveOut, pair);
+                if(_fee == fee) break;
+            }
+            amounts[i - 1] = amountIn;
         }
     }
 }
