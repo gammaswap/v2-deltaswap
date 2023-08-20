@@ -57,10 +57,11 @@ contract UniswapV2Router02 is UniswapV2Router01, IUniswapV2Router02 {
             uint256 amountInput;
             uint256 amountOutput;
             { // scope to avoid stack too deep errors
-                (uint256 reserve0, uint256 reserve1,) = pair.getReserves();
+                (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
                 (uint256 reserveInput, uint256 reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
                 amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput;
-                amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput);
+                uint256 fee = UniswapV2Library.calcTradingFee(amountInput, reserveInput, reserveOutput, address(pair));
+                amountOutput = UniswapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput, fee);
             }
             (uint256 amount0Out, uint256 amount1Out) = input == token0 ? (uint256(0), amountOutput) : (amountOutput, uint256(0));
             address to = i < path.length - 2 ? UniswapV2Library.pairFor(factory, output, path[i + 2]) : _to;

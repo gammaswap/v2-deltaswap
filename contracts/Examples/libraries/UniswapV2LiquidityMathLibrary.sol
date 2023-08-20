@@ -46,8 +46,9 @@ library UniswapV2LiquidityMathLibrary {
         uint256 truePriceTokenA,
         uint256 truePriceTokenB
     ) view internal returns (uint256 reserveA, uint256 reserveB) {
+        address pair;
         // first get reserves before the swap
-        (reserveA, reserveB,) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
+        (reserveA, reserveB, pair) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
 
         require(reserveA > 0 && reserveB > 0, 'UniswapV2ArbitrageLibrary: ZERO_PAIR_RESERVES');
 
@@ -58,13 +59,14 @@ library UniswapV2LiquidityMathLibrary {
             return (reserveA, reserveB);
         }
 
+        uint256 fee = UniswapV2Library.calcTradingFee(amountIn, reserveA, reserveB, pair);
         // now affect the trade to the reserves
         if (aToB) {
-            uint256 amountOut = UniswapV2Library.getAmountOut(amountIn, reserveA, reserveB);
+            uint256 amountOut = UniswapV2Library.getAmountOut(amountIn, reserveA, reserveB, fee);
             reserveA += amountIn;
             reserveB -= amountOut;
         } else {
-            uint256 amountOut = UniswapV2Library.getAmountOut(amountIn, reserveB, reserveA);
+            uint256 amountOut = UniswapV2Library.getAmountOut(amountIn, reserveB, reserveA, fee);
             reserveB += amountIn;
             reserveA -= amountOut;
         }

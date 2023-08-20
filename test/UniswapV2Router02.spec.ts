@@ -40,27 +40,27 @@ describe('UniswapV2Router02', () => {
     })
 
     it('getAmountOut', async () => {
-        expect(await router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(100))).to.eq(BigNumber.from(1))
-        await expect(router.getAmountOut(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100))).to.be.revertedWith(
+        expect(await router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(1))
+        await expect(router.getAmountOut(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT'
         )
-        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(0), BigNumber.from(100))).to.be.revertedWith(
+        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(0), BigNumber.from(100), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
         )
-        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(0))).to.be.revertedWith(
+        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(0), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
         )
     })
 
     it('getAmountIn', async () => {
-        expect(await router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(100))).to.eq(BigNumber.from(2))
-        await expect(router.getAmountIn(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100))).to.be.revertedWith(
+        expect(await router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(2))
+        await expect(router.getAmountIn(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT'
         )
-        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(0), BigNumber.from(100))).to.be.revertedWith(
+        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(0), BigNumber.from(100), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
         )
-        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(0))).to.be.revertedWith(
+        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(0), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
         )
     })

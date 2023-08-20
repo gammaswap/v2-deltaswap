@@ -267,12 +267,12 @@ contract UniswapV2Router01 is IUniswapV2Router01 {
         return UniswapV2Library.quote(amountA, reserveA, reserveB);
     }
 
-    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut) public pure virtual override returns (uint256 amountOut) {
-        return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut);
+    function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, uint256 fee) public pure virtual override returns (uint256 amountOut) {
+        return UniswapV2Library.getAmountOut(amountIn, reserveIn, reserveOut, fee);
     }
 
-    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut) public pure virtual override returns (uint256 amountIn) {
-        return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut);
+    function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut, uint256 fee) public pure virtual override returns (uint256 amountIn) {
+        return UniswapV2Library.getAmountIn(amountOut, reserveIn, reserveOut, fee);
     }
 
     function getAmountsOut(uint256 amountIn, address[] memory path) public view virtual override returns (uint256[] memory amounts) {
