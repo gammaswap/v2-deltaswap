@@ -21,7 +21,7 @@ describe('UniswapV2Factory', () => {
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet)
         factory = fixture.factory
-        // console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
+        console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
