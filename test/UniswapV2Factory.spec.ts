@@ -21,10 +21,10 @@ describe('UniswapV2Factory', () => {
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet)
         factory = fixture.factory
-        //console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
+        console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
     })
 
-    it('feeTo, feeToSetter, allPairsLength', async () => {
+    it.only('feeTo, feeToSetter, allPairsLength', async () => {
         expect(await factory.feeTo()).to.eq(constants.AddressZero)
         expect(await factory.feeToSetter()).to.eq(wallet.address)
         expect(await factory.allPairsLength()).to.eq(0)
