@@ -103,13 +103,13 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
             if(lastLiquidityTradedEMA >= liquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
                 if(lastLiquidityTradedEMA >= liquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
-                    return 3;//10; TODO: Every if statement will require at most an additional recalculation in the getAmountsIn function
+                    return 3;
                 }
-                return 3;
+                return 2;
             }
-            return 3;//1
+            return 1;
         }
-        return 3;//0
+        return 0;
     }
 
     function _updateVolumeEMA(uint256 liquidityTraded) internal virtual returns(uint256 lastLiquidityTradedEMA) {

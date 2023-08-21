@@ -40,6 +40,37 @@ describe('UniswapV2Router02', () => {
     })
 
     it('getAmountOut', async () => {
+        const ONE = BigNumber.from(10).pow(18);
+        const swapAmt = BigNumber.from(1).mul(ONE);
+
+        let reserveIn = BigNumber.from(5).mul(ONE);
+        let reserveOut = BigNumber.from(10).mul(ONE);
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 3)).to.eq("1662497915624478906");
+
+        reserveIn = BigNumber.from(5).mul(ONE);
+        reserveOut = BigNumber.from(10).mul(ONE);
+        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("2851015155847869602");
+
+        reserveIn = BigNumber.from(10).mul(ONE);
+        reserveOut = BigNumber.from(5).mul(ONE);
+        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("831248957812239453");
+
+        reserveIn = BigNumber.from(10).mul(ONE);
+        reserveOut = BigNumber.from(5).mul(ONE);
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("453718857974177123");
+
+        reserveIn = BigNumber.from(10).mul(ONE);
+        reserveOut = BigNumber.from(10).mul(ONE);
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("907437715948354246");
+
+        reserveIn = BigNumber.from(100).mul(ONE);
+        reserveOut = BigNumber.from(100).mul(ONE);
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 0)).to.eq("990099009900990099");
+
+        reserveIn = BigNumber.from(1000).mul(ONE);
+        reserveOut = BigNumber.from(1000).mul(ONE);
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 0)).to.eq("999000999000999000");
+
         expect(await router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(1))
         await expect(router.getAmountOut(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
             'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT'
