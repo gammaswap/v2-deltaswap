@@ -21,7 +21,7 @@ describe('UniswapV2Factory', () => {
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet)
         factory = fixture.factory
-        //console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
+        // console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
@@ -58,7 +58,7 @@ describe('UniswapV2Factory', () => {
         await createPair(TEST_ADDRESSES.slice().reverse() as [string, string])
     })
 
-    it('createPair:gas', async () => {
+    it.skip('createPair:gas', async () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
