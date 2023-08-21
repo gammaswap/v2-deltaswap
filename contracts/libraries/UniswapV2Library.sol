@@ -20,7 +20,7 @@ library UniswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'66252f39012fb5fdf3561abafddc6f8f9abac9c08aee60f0549fec4b395253af' // init code hash
+                hex'efe2c1a47e32e730099d79add5e5611cf7f72254dd32cf57439d323d4b2a2762' // init code hash
             )))));
     }
 
@@ -65,7 +65,7 @@ library UniswapV2Library {
         amounts[0] = amountIn;
         for (uint256 i; i < path.length - 1; i++) {
             (uint256 reserveIn, uint256 reserveOut, address pair) = getReserves(factory, path[i], path[i + 1]);
-            uint256 fee = calcTradingFee(amounts[i], reserveIn, reserveOut, pair);
+            uint256 fee = calcPairTradingFee(amounts[i], reserveIn, reserveOut, pair);
             amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut, fee);
         }
     }
@@ -83,16 +83,16 @@ library UniswapV2Library {
             while(true) {
                 fee = _fee;
                 amountIn = getAmountIn(amounts[i], reserveIn, reserveOut, fee);
-                _fee = calcTradingFee(amountIn, reserveIn, reserveOut, pair);
+                _fee = calcPairTradingFee(amountIn, reserveIn, reserveOut, pair);
                 if(_fee == fee) break;
             }
             amounts[i - 1] = amountIn;
         }
     }
 
-    function calcTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
+    function calcPairTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
         uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
-        (uint256 liquidityTradedEMA,,) = IUniswapV2Pair(pair).getLastLiquidityTradedEMA(tradeLiquidity);
-        fee = IUniswapV2Pair(pair).calcTradingFee(liquidityTradedEMA);
+        (uint256 liquidityTradedEMA,,,uint256 liquidityEMA) = IUniswapV2Pair(pair).getLastLiquidityTradedEMA(tradeLiquidity);
+        fee = GammaSwapLib.calcTradingFee(liquidityTradedEMA, liquidityEMA);
     }
 }

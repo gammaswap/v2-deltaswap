@@ -40,6 +40,7 @@ interface IUniswapV2Pair is IUniswapV2ERC20 {
     function protocolId() external view returns (uint16);
     function implementation() external view returns (address);
 
-    function getLastLiquidityTradedEMA(uint256 liquidityTraded) external view returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum);
-    function calcTradingFee(uint256 lastLiquidityTradedEMA) external view returns(uint256);
+    function getPrevLiquidityTradedEMA() external view returns(uint256);
+    function getLastLiquidityTradedEMA(uint256 liquidityTraded) external view returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum, uint256 liquidityEMA);
+    function getLastTradeSum(uint256 liquidityTraded) external view returns(uint256);
 }

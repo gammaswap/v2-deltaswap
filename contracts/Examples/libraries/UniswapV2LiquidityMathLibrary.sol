@@ -59,7 +59,7 @@ library UniswapV2LiquidityMathLibrary {
             return (reserveA, reserveB);
         }
 
-        uint256 fee = UniswapV2Library.calcTradingFee(amountIn, reserveA, reserveB, pair);
+        uint256 fee = UniswapV2Library.calcPairTradingFee(amountIn, reserveA, reserveB, pair);
         // now affect the trade to the reserves
         if (aToB) {
             uint256 amountOut = UniswapV2Library.getAmountOut(amountIn, reserveA, reserveB, fee);

@@ -99,35 +99,43 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         emit Sync(reserve0, reserve1);
     }
 
-    function calcTradingFee(uint256 lastLiquidityTradedEMA) public virtual override view returns(uint256) {
-        if(lastLiquidityTradedEMA >= liquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
-            if(lastLiquidityTradedEMA >= liquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
-                if(lastLiquidityTradedEMA >= liquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
-                    return 3;
-                }
-                return 2;
-            }
-            return 1;
-        }
-        return 0;
-    }
-
-    function _updateVolumeEMA(uint256 liquidityTraded) internal virtual returns(uint256 lastLiquidityTradedEMA) {
+    function _updateLiquidityTradedEMA(uint256 liquidityTraded) internal virtual returns(uint256 lastLiquidityTradedEMA) {
         uint256 prevLiquidityTradedEMA;
         uint256 tradeSum;
-        (lastLiquidityTradedEMA, prevLiquidityTradedEMA, tradeSum) = getLastLiquidityTradedEMA(liquidityTraded);
+        uint32 blockNum = uint32(block.number);
+        (lastLiquidityTradedEMA, prevLiquidityTradedEMA, tradeSum,) = _getLastLiquidityTradedEMA(liquidityTraded, blockNum);
         lastTradeSum = uint112(tradeSum);
         liquidityTradedEMA = uint112(lastLiquidityTradedEMA);
+        if(lastTradeBlockNumber != blockNum) {
+            lastTradeBlockNumber = blockNum;
+        }
     }
 
-    function getLastLiquidityTradedEMA(uint256 liquidityTraded) public virtual override view returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum) {
-        tradeSum = _calcLastTradeSum(liquidityTraded);
-        prevLiquidityTradedEMA = _getPrevLiquidityTradedEMA();
+    function getLastLiquidityTradedEMA(uint256 liquidityTraded) external virtual override view
+        returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum, uint256 lastLiquidityEMA) {
+        return _getLastLiquidityTradedEMA(liquidityTraded, block.number);
+    }
+
+    function _getLastLiquidityTradedEMA(uint256 liquidityTraded, uint256 currBlock) internal virtual view
+        returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum, uint256 lastLiquidityEMA) {
+        uint256 blockDiff = currBlock - lastTradeBlockNumber;
+        tradeSum = _getLastTradeSum(liquidityTraded, blockDiff);
+        prevLiquidityTradedEMA = _getPrevLiquidityTradedEMA(blockDiff);
         lastLiquidityTradedEMA = GammaSwapLib.calcEMA(tradeSum, prevLiquidityTradedEMA, 20);
+        lastLiquidityEMA = liquidityEMA;
     }
 
-    function _calcLastTradeSum(uint256 liquidityTraded) internal virtual view returns(uint256) {
+    function getLastTradeSum(uint256 liquidityTraded) external virtual override view returns(uint256) {
         uint256 blockDiff = block.number - lastTradeBlockNumber;
+        return _getLastTradeSum(liquidityTraded, blockDiff);
+    }
+
+    function getPrevLiquidityTradedEMA() external virtual override view returns(uint256) {
+        uint256 blockDiff = block.number - lastTradeBlockNumber;
+        return _getPrevLiquidityTradedEMA(blockDiff);
+    }
+
+    function _getLastTradeSum(uint256 liquidityTraded, uint256 blockDiff) internal virtual view returns(uint256) {
         if(blockDiff > 0) {
             return liquidityTraded;
         } else {
@@ -135,8 +143,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         }
     }
 
-    function _getPrevLiquidityTradedEMA() internal virtual view returns(uint256) {
-        uint256 blockDiff = block.number - lastTradeBlockNumber;
+    function _getPrevLiquidityTradedEMA(uint256 blockDiff) internal virtual view returns(uint256) {
         if(blockDiff > 0) {
             if(blockDiff > 50) {
                 // if no trade in 50 blocks (~10 minutes), then reset
@@ -247,7 +254,11 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint256 fee = 0;
             if(!isGammaPoolAddress(msg.sender)) {
-                fee = calcTradingFee(_updateVolumeEMA(GammaSwapLib.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)));
+                fee = GammaSwapLib.calcTradingFee(
+                    _updateLiquidityTradedEMA(
+                        GammaSwapLib.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
+                    ),
+                    liquidityEMA);
             }
             uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;
             uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;

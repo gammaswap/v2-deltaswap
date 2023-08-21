@@ -5,6 +5,19 @@ import './Math.sol';
 
 library GammaSwapLib {
 
+    function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) internal view returns(uint256) {
+        if(lastLiquidityTradedEMA >= lastLiquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
+            if(lastLiquidityTradedEMA >= lastLiquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
+                if(lastLiquidityTradedEMA >= lastLiquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+                    return 3;
+                }
+                return 2;
+            }
+            return 1;
+        }
+        return 0;
+    }
+
     function calcTradeLiquidity(uint256 amount0, uint256 amount1, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {
         if(amount0 > 0) {
             return Math.sqrt(amount0 * amount0 * reserve1 / reserve0);
