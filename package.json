@@ -15,7 +15,7 @@
   },
   "scripts": {
     "hardhat": "hardhat",
-    "compile": "hardhat compile",
+    "compile": "hardhat clean && hardhat compile",
     "test": "hardhat test"
   },
   "author": "Daniel Alcarraz <dalcarraz@gammaswap.com>",

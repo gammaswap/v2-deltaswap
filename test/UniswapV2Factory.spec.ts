@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from 'chai'
 import { BigNumber, Contract, utils, constants } from 'ethers'
+import { config, userConfig } from 'hardhat'
 
 import { getCreate2Address } from './shared/utilities'
 import { factoryFixture } from './shared/fixtures'
@@ -21,6 +22,7 @@ describe('UniswapV2Factory', () => {
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet)
         factory = fixture.factory
+        console.log("===========", config, userConfig)
         // console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
     })
 
