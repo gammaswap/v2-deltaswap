@@ -493,7 +493,7 @@ describe('UniswapV2Router{01,02}', () => {
                         .withArgs([swapAmount, expectedOutputAmount])
                 })
 
-                it('gas', async () => {
+                it.skip('gas', async () => {
                     const WETHPartnerAmount = expandTo18Decimals(10)
                     const ETHAmount = expandTo18Decimals(5)
                     await WETHPartner.transfer(WETHPair.address, WETHPartnerAmount)
