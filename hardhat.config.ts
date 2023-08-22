@@ -16,6 +16,12 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      remappings: [
+        "ds-test/=lib/forge-std/lib/ds-test/src/",
+        "eth-gas-reporter/=eth-gas-reporter/",
+        "forge-std/=lib/forge-std/src/",
+        "hardhat/=hardhat/",
+      ]
     },
   },
 };
