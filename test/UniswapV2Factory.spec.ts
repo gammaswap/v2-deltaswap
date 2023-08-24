@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from 'chai'
 import { BigNumber, Contract, utils, constants } from 'ethers'
+import { config, userConfig } from "hardhat";
 
 import { getCreate2Address } from './shared/utilities'
 import { factoryFixture } from './shared/fixtures'
@@ -9,6 +10,14 @@ const TEST_ADDRESSES: [string, string] = [
     '0x1000000000000000000000000000000000000000',
     '0x2000000000000000000000000000000000000000'
 ]
+
+const formatObject = (obj: any) => {
+    return JSON.stringify(obj, (key, value) =>
+        typeof value === 'bigint'
+            ? value.toString()
+            : value
+    , 2);
+}
 
 describe('UniswapV2Factory', () => {
     let UniswapV2Pair: any;
@@ -21,7 +30,8 @@ describe('UniswapV2Factory', () => {
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet)
         factory = fixture.factory
-        //console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
+        console.log('============', formatObject(config), formatObject(userConfig));
+        console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {

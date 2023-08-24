@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import "@nomicfoundation/hardhat-foundry";
+// import "@nomicfoundation/hardhat-foundry";
 
 require("hardhat-contract-sizer"); // "npx hardhat size-contracts" or "yarn run hardhat size-contracts"
 
@@ -16,6 +16,12 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      remappings: [
+        "ds-test/=lib/forge-std/lib/ds-test/src/",
+        "eth-gas-reporter/=eth-gas-reporter/",
+        "forge-std/=lib/forge-std/src/",
+        "hardhat/=hardhat/",
+      ]
     },
   },
 };
