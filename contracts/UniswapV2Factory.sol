@@ -45,4 +45,9 @@ contract UniswapV2Factory is IUniswapV2Factory {
         require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
         feeToSetter = _feeToSetter;
     }
+
+    function setGammaPool(address tokenA, address tokenB, address gsFactory, address implementation, uint16 protocolId) external override {
+        require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+        IUniswapV2Pair(getPair[tokenA][tokenB]).setGammaPool(gsFactory, implementation, protocolId);
+    }
 }

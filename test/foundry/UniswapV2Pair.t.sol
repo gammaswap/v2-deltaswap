@@ -138,29 +138,28 @@ contract UniswapV2PairTest is UniswapSetup {
         assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
     }
 
-    function testSetGSProtocol() public {
+    function testSetGammaPool() public {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
 
+        address poolAddr = GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+
         vm.startPrank(address(uniFactory));
-        uniPair.setGSProtocol(gsFactory,  implementation, protocolId);
+        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
         vm.stopPrank();
 
-        assertEq(uniPair.gsFactory(), gsFactory);
-        assertEq(uniPair.gsPoolKey(), gsPoolKey);
-        assertEq(uniPair.protocolId(), protocolId);
-        assertEq(uniPair.implementation(), implementation);
+        assertEq(uniPair.gammaPool(), poolAddr);
     }
 
-    function testSetGSProtocolFail() public {
+    function testSetGammaPoolFail() public {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
         vm.expectRevert("UniswapV2: FORBIDDEN");
-        uniPair.setGSProtocol(gsFactory,  implementation, protocolId);
+        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
     }
 
     function testTradingFeesGS() public {
@@ -177,7 +176,7 @@ contract UniswapV2PairTest is UniswapSetup {
         bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
 
         vm.startPrank(address(uniFactory));
-        uniPair.setGSProtocol(gsFactory,  implementation, protocolId);
+        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
         vm.stopPrank();
 
         address poolAddr = GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);

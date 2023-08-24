@@ -15,4 +15,5 @@ interface IUniswapV2Factory {
 
     function setFeeTo(address) external;
     function setFeeToSetter(address) external;
+    function setGammaPool(address tokenA, address tokenB, address gsFactory, address implementation, uint16 protocolId) external;
 }

@@ -30,8 +30,8 @@ describe('UniswapV2Factory', () => {
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet)
         factory = fixture.factory
-        console.log('============', formatObject(config), formatObject(userConfig));
-        console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
+        //console.log('============', formatObject(config), formatObject(userConfig));
+        //console.log("initCodeHash >> ", utils.keccak256(UniswapV2Pair.bytecode).toString())
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
@@ -72,7 +72,7 @@ describe('UniswapV2Factory', () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(2326303)
+        expect(receipt.gasUsed).to.eq(2294634)
     })
 
     it('setFeeTo', async () => {
@@ -86,5 +86,19 @@ describe('UniswapV2Factory', () => {
         await factory.setFeeToSetter(other.address)
         expect(await factory.feeToSetter()).to.eq(other.address)
         await expect(factory.setFeeToSetter(wallet.address)).to.be.revertedWith('UniswapV2: FORBIDDEN')
+    })
+
+    it('setGammaPool', async () => {
+        const res = await (await factory.createPair(...TEST_ADDRESSES)).wait();
+        const pair = UniswapV2Pair.attach(res.events[0].args.pair);
+        expect(await pair.gammaPool()).to.eq(constants.AddressZero);
+
+        const addr1 = '0x3000000000000000000000000000000000000000';
+        const addr2 = '0x4000000000000000000000000000000000000000';
+        await expect(factory.connect(other).setGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1], addr1, addr2, 1)).to.be.revertedWith('UniswapV2: FORBIDDEN');
+        expect(await pair.gammaPool()).to.eq(constants.AddressZero);
+
+        await (await factory.setGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1], addr1, addr2, 1)).wait();
+        expect(await pair.gammaPool()).to.not.eq(constants.AddressZero);
     })
 })

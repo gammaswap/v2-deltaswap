@@ -20,10 +20,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     address public override token0;
     address public override token1;
 
-    address public override gsFactory;
-    uint16 public override protocolId;
-    address public override implementation;
-    bytes32 public override gsPoolKey;
+    address public override gammaPool;
 
     uint112 private liquidityEMA;
     uint32 private lastLiquidityBlockNumber;
@@ -70,13 +67,10 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         token1 = _token1;
     }
 
-    // called once by the factory at time of deployment
-    function setGSProtocol(address _gsFactory, address _implementation, uint16 _protocolId) external override {
+    // called by the factory after deployment
+    function setGammaPool(address gsFactory, address implementation, uint16 protocolId) external override {
         require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
-        gsFactory = _gsFactory;
-        protocolId = _protocolId;
-        implementation = _implementation;
-        gsPoolKey = keccak256(abi.encode(address(this), _protocolId));
+        gammaPool = GammaSwapLib.predictDeterministicAddress(implementation, keccak256(abi.encode(address(this), protocolId)), gsFactory);
     }
 
     // update reserves and, on the first call per block, price accumulators
@@ -230,10 +224,6 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
-    function isGammaPoolAddress(address _sender) internal virtual view returns(bool) {
-        return _sender == GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
-    }
-
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external override lock {
         require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
@@ -257,7 +247,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint256 fee = 0;
-            if(!isGammaPoolAddress(msg.sender)) {
+            if(msg.sender != gammaPool) {
                 fee = GammaSwapLib.calcTradingFee(
                     _updateLiquidityTradedEMA(
                         GammaSwapLib.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)

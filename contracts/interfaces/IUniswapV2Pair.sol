@@ -34,11 +34,8 @@ interface IUniswapV2Pair is IUniswapV2ERC20 {
 
     function initialize(address, address) external;
 
-    function setGSProtocol(address gsFactory, address implementation, uint16 protocolId) external;
-    function gsFactory() external view returns (address);
-    function gsPoolKey() external view returns (bytes32);
-    function protocolId() external view returns (uint16);
-    function implementation() external view returns (address);
+    function gammaPool() external view returns (address);
+    function setGammaPool(address gsFactory, address implementation, uint16 protocolId) external;
 
     function getLiquidityEMA() external view returns(uint112 liquidityEMA, uint32 lastLiquidityEMABlockNumber);
     function getLastTradeLiquidityEMA() external view returns(uint256);
