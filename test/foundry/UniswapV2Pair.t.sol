@@ -206,13 +206,15 @@ contract UniswapV2PairTest is UniswapSetup {
         uint256 tradeBlockNum;
         uint256 tradeLiquidityEMA;
         uint256 lastTradeLiquidityEMA;
+        uint256 tradeLiquiditySum;
 
         (reserve0, reserve1,) = uniPair.getReserves();
         assertEq(reserve0, 0);
         assertEq(reserve1, 0);
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(tradeLiquidityEMA, 0);
         assertEq(lastTradeLiquidityEMA, 0);
+        assertEq(tradeLiquiditySum, 0);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (reserve0, reserve1,) = uniPair.getReserves();
@@ -221,108 +223,124 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0*1e18);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0*1e18);
         assertEq(tradeLiquidityEMA, 1*1e18);
         assertEq(lastTradeLiquidityEMA, 1*1e18);
+        assertEq(tradeLiquiditySum, 1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(1*1e18);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(1*1e18);
         assertEq(tradeLiquidityEMA, 12*1e17);
         assertEq(lastTradeLiquidityEMA, 1*1e18);
+        assertEq(tradeLiquiditySum, 2*1e18);
 
         uint256 tradeLiq = calculateTradeLiquidity(1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
 
         uint256 expectedTradeLiquidityEMA = tradeLiquidityEMA;
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA,expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, 1*1e18 + tradeLiq);
 
         vm.roll(2);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA,lastTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, 0);
 
         expectedTradeLiquidityEMA = lastTradeLiquidityEMA;
 
         tradeLiq = calculateTradeLiquidity(1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertLt(tradeLiquidityEMA,lastTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, tradeLiq);
 
         expectedTradeLiquidityEMA = tradeLiquidityEMA;
 
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA,expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, tradeLiq);
 
+        uint256 prevTradeLiq = tradeLiq;
         tradeLiq = calculateTradeLiquidity(2*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertNotEq(tradeLiquidityEMA,expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, prevTradeLiq + tradeLiq);
 
         expectedTradeLiquidityEMA = tradeLiquidityEMA;
 
         sell_wbtc(addr1, 2*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, prevTradeLiq + tradeLiq);
 
         expectedTradeLiquidityEMA = lastTradeLiquidityEMA;
 
         vm.roll(52);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, 0);
 
         tradeLiq = calculateTradeLiquidity(3*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertNotEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, tradeLiq);
 
         expectedTradeLiquidityEMA = tradeLiquidityEMA;
 
         sell_wbtc(addr1, 3*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, tradeLiq);
 
         vm.roll(102);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, 0);
 
         vm.roll(103);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, 0);
         assertEq(tradeLiquidityEMA, 0);
+        assertEq(tradeLiquiditySum, 0);
 
         tradeLiq = calculateTradeLiquidity(4*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA, 0);
         assertEq(tradeLiquidityEMA, tradeLiq);
+        assertEq(tradeLiquiditySum, tradeLiq);
 
         expectedTradeLiquidityEMA = tradeLiquidityEMA;
 
         sell_wbtc(addr1, 4*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA,) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
+        assertEq(tradeLiquiditySum, tradeLiq);
     }
 
     function calculateTradeLiquidity(uint256 amount) internal view returns(uint256) {

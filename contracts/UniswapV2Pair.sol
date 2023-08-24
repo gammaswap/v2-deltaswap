@@ -94,9 +94,11 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     function _updateLiquidityTradedEMA(uint256 tradeLiquidity) internal virtual returns(uint256 _tradeLiquidityEMA) {
+        require(tradeLiquidity > 0, "UniswapV2: ZERO_TRADE_LIQUIDITY");
         uint32 blockNum = uint32(block.number);
+        uint256 blockDiff = blockNum - lastTradeBlockNumber;
         uint256 tradeLiquiditySum;
-        (_tradeLiquidityEMA,,tradeLiquiditySum) = _getTradeLiquidityEMA(tradeLiquidity, blockNum);
+        (_tradeLiquidityEMA,,tradeLiquiditySum) = _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
         lastTradeLiquiditySum = uint112(tradeLiquiditySum);
         tradeLiquidityEMA = uint112(_tradeLiquidityEMA);
         if(lastTradeBlockNumber != blockNum) {
@@ -105,8 +107,9 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     function calcTradingFee(uint256 tradeLiquidity) external virtual override view returns(uint256 fee) {
-        (uint256 tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, block.number);
-        fee = GammaSwapLib.calcTradingFee(tradeLiquidityEMA, liquidityEMA);
+        uint256 blockDiff = block.number - lastTradeBlockNumber;
+        (uint256 _tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
+        fee = GammaSwapLib.calcTradingFee(_tradeLiquidityEMA, liquidityEMA);
     }
 
     function getLiquidityEMA() external virtual override view returns(uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) {
@@ -115,16 +118,16 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     function getTradeLiquidityEMA(uint256 tradeLiquidity) external virtual override view
-        returns(uint256 tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
-        return _getTradeLiquidityEMA(tradeLiquidity, block.number);
+        returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
+        uint256 blockDiff = block.number - lastTradeBlockNumber;
+        return _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
     }
 
-    function _getTradeLiquidityEMA(uint256 tradeLiquidity, uint256 currBlock) internal virtual view
-        returns(uint256 tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
-        uint256 blockDiff = currBlock - lastTradeBlockNumber;
+    function _getTradeLiquidityEMA(uint256 tradeLiquidity, uint256 blockDiff) internal virtual view
+        returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
         tradeLiquiditySum = _getLastTradeLiquiditySum(tradeLiquidity, blockDiff);
         lastTradeLiquidityEMA = _getLastTradeLiquidityEMA(blockDiff);
-        tradeLiquidityEMA = tradeLiquidity > 0 ? GammaSwapLib.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
+        _tradeLiquidityEMA = tradeLiquidity > 0 ? GammaSwapLib.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
     }
 
     function getLastTradeLiquiditySum(uint256 tradeLiquidity) external virtual override view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum) {
