@@ -371,8 +371,8 @@ describe('UniswapV2Router{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.UniswapV2Router01]: 175946,
-                            [RouterVersion.UniswapV2Router02]: 176035
+                            [RouterVersion.UniswapV2Router01]: 175605,
+                            [RouterVersion.UniswapV2Router02]: 175694
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
@@ -493,7 +493,7 @@ describe('UniswapV2Router{01,02}', () => {
                         .withArgs([swapAmount, expectedOutputAmount])
                 })
 
-                it.skip('gas', async () => {
+                it('gas', async () => {
                     const WETHPartnerAmount = expandTo18Decimals(10)
                     const ETHAmount = expandTo18Decimals(5)
                     await WETHPartner.transfer(WETHPair.address, WETHPartnerAmount)
@@ -520,8 +520,8 @@ describe('UniswapV2Router{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.UniswapV2Router01]: 179578,
-                            [RouterVersion.UniswapV2Router02]: 179612
+                            [RouterVersion.UniswapV2Router01]: 179249,
+                            [RouterVersion.UniswapV2Router02]: 179181
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)

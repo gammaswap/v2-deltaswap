@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import './interfaces/IUniswapV2Pair.sol';
-import './UniswapV2ERC20.sol';
 import './libraries/Math.sol';
 import './libraries/GammaSwapLib.sol';
 import './libraries/UQ112x112.sol';
 import './interfaces/IERC20.sol';
+import './interfaces/IUniswapV2Pair.sol';
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Callee.sol';
+import './UniswapV2ERC20.sol';
 
 contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     using UQ112x112 for uint224;
@@ -28,8 +28,8 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     uint112 private liquidityEMA;
     uint32 private lastLiquidityBlockNumber;
 
-    uint112 private lastTradeSum;
-    uint112 private liquidityTradedEMA;
+    uint112 private tradeLiquidityEMA;
+    uint112 private lastTradeLiquiditySum;
     uint32 private lastTradeBlockNumber;
 
     uint112 private reserve0;           // uses single storage slot, accessible via getReserves
@@ -99,61 +99,65 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         emit Sync(reserve0, reserve1);
     }
 
-    function _updateLiquidityTradedEMA(uint256 liquidityTraded) internal virtual returns(uint256 lastLiquidityTradedEMA) {
-        uint256 prevLiquidityTradedEMA;
-        uint256 tradeSum;
+    function _updateLiquidityTradedEMA(uint256 tradeLiquidity) internal virtual returns(uint256 _tradeLiquidityEMA) {
         uint32 blockNum = uint32(block.number);
-        (lastLiquidityTradedEMA, prevLiquidityTradedEMA, tradeSum,) = _getLastLiquidityTradedEMA(liquidityTraded, blockNum);
-        lastTradeSum = uint112(tradeSum);
-        liquidityTradedEMA = uint112(lastLiquidityTradedEMA);
+        uint256 tradeLiquiditySum;
+        (_tradeLiquidityEMA,,tradeLiquiditySum) = _getTradeLiquidityEMA(tradeLiquidity, blockNum);
+        lastTradeLiquiditySum = uint112(tradeLiquiditySum);
+        tradeLiquidityEMA = uint112(_tradeLiquidityEMA);
         if(lastTradeBlockNumber != blockNum) {
             lastTradeBlockNumber = blockNum;
         }
     }
 
-    function getLastLiquidityTradedEMA(uint256 liquidityTraded) external virtual override view
-        returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum, uint256 lastLiquidityEMA) {
-        return _getLastLiquidityTradedEMA(liquidityTraded, block.number);
+    function calcTradingFee(uint256 tradeLiquidity) external virtual override view returns(uint256 fee) {
+        (uint256 tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, block.number);
+        fee = GammaSwapLib.calcTradingFee(tradeLiquidityEMA, liquidityEMA);
     }
 
-    function _getLastLiquidityTradedEMA(uint256 liquidityTraded, uint256 currBlock) internal virtual view
-        returns(uint256 lastLiquidityTradedEMA, uint256 prevLiquidityTradedEMA, uint256 tradeSum, uint256 lastLiquidityEMA) {
+    function getLiquidityEMA() external virtual override view returns(uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) {
+        _liquidityEMA = liquidityEMA;
+        _lastLiquidityBlockNumber = lastLiquidityBlockNumber;
+    }
+
+    function getTradeLiquidityEMA(uint256 tradeLiquidity) external virtual override view
+        returns(uint256 tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
+        return _getTradeLiquidityEMA(tradeLiquidity, block.number);
+    }
+
+    function _getTradeLiquidityEMA(uint256 tradeLiquidity, uint256 currBlock) internal virtual view
+        returns(uint256 tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
         uint256 blockDiff = currBlock - lastTradeBlockNumber;
-        tradeSum = _getLastTradeSum(liquidityTraded, blockDiff);
-        prevLiquidityTradedEMA = _getPrevLiquidityTradedEMA(blockDiff);
-        lastLiquidityTradedEMA = GammaSwapLib.calcEMA(tradeSum, prevLiquidityTradedEMA, 20);
-        lastLiquidityEMA = liquidityEMA;
+        tradeLiquiditySum = _getLastTradeLiquiditySum(tradeLiquidity, blockDiff);
+        lastTradeLiquidityEMA = _getLastTradeLiquidityEMA(blockDiff);
+        tradeLiquidityEMA = tradeLiquidity > 0 ? GammaSwapLib.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
     }
 
-    function getLastTradeSum(uint256 liquidityTraded) external virtual override view returns(uint256) {
+    function getLastTradeLiquiditySum(uint256 tradeLiquidity) external virtual override view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum) {
         uint256 blockDiff = block.number - lastTradeBlockNumber;
-        return _getLastTradeSum(liquidityTraded, blockDiff);
+        _tradeLiquiditySum = uint112(_getLastTradeLiquiditySum(tradeLiquidity, blockDiff));
+        _lastTradeBlockNum = lastTradeBlockNumber;
     }
 
-    function getPrevLiquidityTradedEMA() external virtual override view returns(uint256) {
+    function getLastTradeLiquidityEMA() external virtual override view returns(uint256) {
         uint256 blockDiff = block.number - lastTradeBlockNumber;
-        return _getPrevLiquidityTradedEMA(blockDiff);
+        return _getLastTradeLiquidityEMA(blockDiff);
     }
 
-    function _getLastTradeSum(uint256 liquidityTraded, uint256 blockDiff) internal virtual view returns(uint256) {
+    function _getLastTradeLiquiditySum(uint256 tradeLiquidity, uint256 blockDiff) internal virtual view returns(uint256) {
         if(blockDiff > 0) {
-            return liquidityTraded;
+            return tradeLiquidity;
         } else {
-            return lastTradeSum + liquidityTraded;
+            return lastTradeLiquiditySum + tradeLiquidity;
         }
     }
 
-    function _getPrevLiquidityTradedEMA(uint256 blockDiff) internal virtual view returns(uint256) {
-        if(blockDiff > 0) {
-            if(blockDiff > 50) {
-                // if no trade in 50 blocks (~10 minutes), then reset
-                return 0;
-            } else {
-                return GammaSwapLib.calcEMA(lastTradeSum, liquidityTradedEMA, 20);
-            }
-        } else {
-            return liquidityTradedEMA;
+    function _getLastTradeLiquidityEMA(uint256 blockDiff) internal virtual view returns(uint256) {
+        if(blockDiff > 50) {
+            // if no trade in 50 blocks (~10 minutes), then reset
+            return 0;
         }
+        return tradeLiquidityEMA;
     }
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)

@@ -20,7 +20,8 @@ library UniswapV2Library {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'd3498da952bded6ddd2346093eff81d0e090883bef205cbf8544d9de904f8718' // init code hash
+                hex'69d15a9a5e25bc4f52b591abe313fe7abd06309e371579735b9a1f8c4f1f9b78' // init code hash
+                //hex'f54710e5d964def45ca73135130c0b7acaede288fadea8f17b148363786f9145' // init code hash
             )))));
     }
 
@@ -92,7 +93,6 @@ library UniswapV2Library {
 
     function calcPairTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
         uint256 tradeLiquidity = GammaSwapLib.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
-        (uint256 liquidityTradedEMA,,,uint256 liquidityEMA) = IUniswapV2Pair(pair).getLastLiquidityTradedEMA(tradeLiquidity);
-        fee = GammaSwapLib.calcTradingFee(liquidityTradedEMA, liquidityEMA);
+        fee = IUniswapV2Pair(pair).calcTradingFee(tradeLiquidity);
     }
 }
