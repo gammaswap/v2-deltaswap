@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import './interfaces/IUniswapV2ERC20.sol';
+import "./IERC20Test.sol";
 
-contract UniswapV2ERC20 is IUniswapV2ERC20 {
-    string public constant override name = 'Uniswap V2';
-    string public constant override symbol = 'UNI-V2';
+contract ERC20Test is IERC20Test {
+
+    address public owner;
+    string public override name;
+    string public override symbol;
+
     uint8 public constant override decimals = 18;
     uint256  public override totalSupply;
     mapping(address => uint256) public override balanceOf;
@@ -16,7 +19,11 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
     bytes32 public constant override PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public override nonces;
 
-    constructor() {
+    constructor(string memory name_, string memory symbol_) {
+        name = name_;
+        symbol = symbol_;
+        owner = msg.sender;
+        _mint(msg.sender, 1_000_000 * 1e18);
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -30,6 +37,10 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
                 address(this)
             )
         );
+    }
+
+    function mint(address to, uint256 amount) public virtual {
+        _mint(to, amount);
     }
 
     function _mint(address to, uint256 value) internal {

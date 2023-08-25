@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: GPL-v3
-pragma solidity =0.6.6;
+pragma solidity =0.8.17;
 
-import '../libraries/UniswapV2LiquidityMathLibrary.sol';
+import './libraries/UniswapV2LiquidityMathLibrary.sol';
 
 contract ExampleComputeLiquidityValue {
-    using SafeMath for uint256;
 
     address public immutable factory;
 
-    constructor(address factory_) public {
+    constructor(address factory_) {
         factory = factory_;
     }
 
@@ -76,7 +75,7 @@ contract ExampleComputeLiquidityValue {
     ) external view returns (
         uint256
     ) {
-        uint gasBefore = gasleft();
+        uint256 gasBefore = gasleft();
         UniswapV2LiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
             factory,
             tokenA,
@@ -85,7 +84,7 @@ contract ExampleComputeLiquidityValue {
             truePriceTokenB,
             liquidityAmount
         );
-        uint gasAfter = gasleft();
+        uint256 gasAfter = gasleft();
         return gasBefore - gasAfter;
     }
 }
