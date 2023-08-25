@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.8.0;
 
-import "./fixtures/UniswapSetup.sol";
+import "./fixtures/DeltaSwapSetup.sol";
 
-contract UniswapV2PairTest is UniswapSetup {
+contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function setUp() public {
         usdc = new ERC20Test("USDC", "USDC");
@@ -22,7 +22,7 @@ contract UniswapV2PairTest is UniswapSetup {
         usdc.mint(addr2, amount);
         wbtc.mint(addr2, amount);
 
-        initUniswap(owner, address(weth), address(usdc), address(wbtc));
+        initDeltaSwap(owner, address(weth), address(usdc), address(wbtc));
 
         address[] memory _addresses = new address[](2);
         _addresses[0] = addr1;
@@ -51,6 +51,19 @@ contract UniswapV2PairTest is UniswapSetup {
         vm.startPrank(addr);
         sellTokenIn(amount, address(wbtc), address(usdc), msg.sender); // quote: 1 wbtc = 1 USDC
         vm.stopPrank();
+    }
+
+    function testCalcTradingFee(uint256 lastLiquidityTradedEMA, uint128 lastLiquidityEMA) public {
+        uint256 fee = uniPair.calcTradingFee(lastLiquidityTradedEMA, lastLiquidityEMA);
+        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+            assertEq(fee,3);
+        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 1000 / 10000) {// if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
+            assertEq(fee,2);
+        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 500 / 10000) {// if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
+            assertEq(fee,1);
+        } else {
+            assertEq(fee,0);
+        }
     }
 
     function testTradingFees1pct() public {
@@ -144,10 +157,10 @@ contract UniswapV2PairTest is UniswapSetup {
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
 
-        address poolAddr = GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
 
         vm.startPrank(address(uniFactory));
-        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
+        uniPair.setGammaPool(poolAddr);
         vm.stopPrank();
 
         assertEq(uniPair.gammaPool(), poolAddr);
@@ -158,8 +171,9 @@ contract UniswapV2PairTest is UniswapSetup {
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
-        vm.expectRevert("UniswapV2: FORBIDDEN");
-        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
+        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        uniPair.setGammaPool(poolAddr);
     }
 
     function testTradingFeesGS() public {
@@ -175,11 +189,12 @@ contract UniswapV2PairTest is UniswapSetup {
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
 
+        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+
         vm.startPrank(address(uniFactory));
-        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
+        uniPair.setGammaPool(poolAddr);
         vm.stopPrank();
 
-        address poolAddr = GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
 
         wbtc.mint(poolAddr, 10*1e18);
         uint256 amountIn = 5*1e18;
@@ -345,7 +360,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
     function calculateTradeLiquidity(uint256 amount) internal view returns(uint256) {
         (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
-        return GammaSwapLib.calcTradeLiquidity(amount, 0, reserve0, reserve1);
+        return Math.calcTradeLiquidity(amount, 0, reserve0, reserve1);
     }
 
     function testTradeLiquiditySum() public {
@@ -366,7 +381,7 @@ contract UniswapV2PairTest is UniswapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 tradeLiq = GammaSwapLib.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        uint256 tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
         sell_wbtc(addr1, 1*1e18);
 
         (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
@@ -384,7 +399,7 @@ contract UniswapV2PairTest is UniswapSetup {
         assertEq(tradeBlockNum, 1);
 
         (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 1*1e18);
 
@@ -395,7 +410,7 @@ contract UniswapV2PairTest is UniswapSetup {
         prevTradeLiquiditySum = tradeLiquiditySum;
 
         (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 1*1e18);
 
@@ -414,7 +429,7 @@ contract UniswapV2PairTest is UniswapSetup {
         assertEq(tradeLiquiditySum,2*1e18);
 
         (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
+        tradeLiq = Math.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 2*1e18);
 
@@ -427,7 +442,7 @@ contract UniswapV2PairTest is UniswapSetup {
         assertEq(tradeLiquiditySum,tradeLiq * 2);
 
         (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
+        tradeLiq = Math.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
 
         (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
         prevTradeLiquiditySum = tradeLiquiditySum;
@@ -445,7 +460,7 @@ contract UniswapV2PairTest is UniswapSetup {
         assertEq(tradeLiquiditySum,0);
 
         (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(3*1e18, 0, reserve0, reserve1);
+        tradeLiq = Math.calcTradeLiquidity(3*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 3*1e18);
 

@@ -11,7 +11,7 @@ const overrides = {
     gasLimit: 9999999
 }
 
-describe('UniswapV2Router02', () => {
+describe('DeltaSwapRouter02', () => {
     let token0: Contract
     let token1: Contract
     let router: Contract
@@ -29,13 +29,13 @@ describe('UniswapV2Router02', () => {
         expect(await router.quote(BigNumber.from(1), BigNumber.from(100), BigNumber.from(200))).to.eq(BigNumber.from(2))
         expect(await router.quote(BigNumber.from(2), BigNumber.from(200), BigNumber.from(100))).to.eq(BigNumber.from(1))
         await expect(router.quote(BigNumber.from(0), BigNumber.from(100), BigNumber.from(200))).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_AMOUNT'
+            'DeltaSwapLibrary: INSUFFICIENT_AMOUNT'
         )
         await expect(router.quote(BigNumber.from(1), BigNumber.from(0), BigNumber.from(200))).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
+            'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
         await expect(router.quote(BigNumber.from(1), BigNumber.from(100), BigNumber.from(0))).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
+            'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
     })
 
@@ -73,26 +73,26 @@ describe('UniswapV2Router02', () => {
 
         expect(await router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(1))
         await expect(router.getAmountOut(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT'
+            'DeltaSwapLibrary: INSUFFICIENT_INPUT_AMOUNT'
         )
         await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(0), BigNumber.from(100), 3)).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
+            'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
         await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(0), 3)).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
+            'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
     })
 
     it('getAmountIn', async () => {
         expect(await router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(2))
         await expect(router.getAmountIn(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT'
+            'DeltaSwapLibrary: INSUFFICIENT_OUTPUT_AMOUNT'
         )
         await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(0), BigNumber.from(100), 3)).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
+            'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
         await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(0), 3)).to.be.revertedWith(
-            'UniswapV2Library: INSUFFICIENT_LIQUIDITY'
+            'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
     })
 
@@ -112,7 +112,7 @@ describe('UniswapV2Router02', () => {
         )
 
         await expect(router.getAmountsOut(BigNumber.from(2), [token0.address])).to.be.revertedWith(
-            'UniswapV2Library: INVALID_PATH'
+            'DeltaSwapLibrary: INVALID_PATH'
         )
         const path = [token0.address, token1.address]
         expect(await router.getAmountsOut(BigNumber.from(2), path)).to.deep.eq([BigNumber.from(2), BigNumber.from(1)])
@@ -134,7 +134,7 @@ describe('UniswapV2Router02', () => {
         )
 
         await expect(router.getAmountsIn(BigNumber.from(1), [token0.address])).to.be.revertedWith(
-            'UniswapV2Library: INVALID_PATH'
+            'DeltaSwapLibrary: INVALID_PATH'
         )
         const path = [token0.address, token1.address]
         expect(await router.getAmountsIn(BigNumber.from(1), path)).to.deep.eq([BigNumber.from(2), BigNumber.from(1)])
@@ -149,7 +149,7 @@ describe('fee-on-transfer tokens', () => {
     let wallet: any
     let provider: any
     let DeflatingERC20: any;
-    let UniswapV2Pair: any;
+    let DeltaSwapPair: any;
     beforeEach(async function() {
         provider = ethers.provider;
         [wallet] = await ethers.getSigners();
@@ -163,8 +163,8 @@ describe('fee-on-transfer tokens', () => {
         // make a DTT<>WETH pair
         await fixture.factoryV2.createPair(DTT.address, WETH.address)
         const pairAddress = await fixture.factoryV2.getPair(DTT.address, WETH.address)
-        UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair");
-        pair = UniswapV2Pair.attach(pairAddress);
+        DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+        pair = DeltaSwapPair.attach(pairAddress);
     })
 
     afterEach(async function() {

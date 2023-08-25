@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.0;
 
-import "./IUniswapV2ERC20.sol";
+import "./IDeltaSwapERC20.sol";
 
-interface IUniswapV2Pair is IUniswapV2ERC20 {
+interface IDeltaSwapPair is IDeltaSwapERC20 {
 
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
     event Burn(address indexed sender, uint256 amount0, uint256 amount1, address indexed to);
@@ -35,11 +35,12 @@ interface IUniswapV2Pair is IUniswapV2ERC20 {
     function initialize(address, address) external;
 
     function gammaPool() external view returns (address);
-    function setGammaPool(address gsFactory, address implementation, uint16 protocolId) external;
+    function setGammaPool(address gammaPool) external;
 
     function getLiquidityEMA() external view returns(uint112 liquidityEMA, uint32 lastLiquidityEMABlockNumber);
     function getLastTradeLiquidityEMA() external view returns(uint256);
     function getTradeLiquidityEMA(uint256 tradeLiquidity) external view returns(uint256 tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum);
     function getLastTradeLiquiditySum(uint256 tradeLiquidity) external view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum);
-    function calcTradingFee(uint256 tradeLiquidity) external view returns(uint256 fee);
+    function estimateTradingFee(uint256 tradeLiquidity) external view returns(uint256 fee);
+    function calcTradingFee(uint256 tradeLiquidityEMA, uint256 liquidityEMA) external view returns(uint256 fee);
 }

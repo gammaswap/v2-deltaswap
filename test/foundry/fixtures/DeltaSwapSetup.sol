@@ -3,17 +3,17 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import "../../../contracts/interfaces/IUniswapV2Factory.sol";
-import "../../../contracts/interfaces/IUniswapV2Pair.sol";
-import "../../../contracts/interfaces/IUniswapV2Router02.sol";
+import "../../../contracts/interfaces/IDeltaSwapFactory.sol";
+import "../../../contracts/interfaces/IDeltaSwapPair.sol";
+import "../../../contracts/interfaces/IDeltaSwapRouter02.sol";
 
-import "../../../contracts/UniswapV2Router02.sol";
-import "../../../contracts/UniswapV2Factory.sol";
+import "../../../contracts/DeltaSwapRouter02.sol";
+import "../../../contracts/DeltaSwapFactory.sol";
 
 import "../../../contracts/test/WETH9.sol";
 import "../../../contracts/test/ERC20Test.sol";
 
-contract UniswapSetup is Test {
+contract DeltaSwapSetup is Test {
 
     WETH9 public weth;
     ERC20Test public usdc;
@@ -23,19 +23,19 @@ contract UniswapSetup is Test {
     address public addr1;
     address public addr2;
 
-    IUniswapV2Factory public uniFactory;
-    IUniswapV2Router02 public uniRouter;
-    IUniswapV2Pair public uniPair;
+    IDeltaSwapFactory public uniFactory;
+    IDeltaSwapRouter02 public uniRouter;
+    IDeltaSwapPair public uniPair;
 
-    function initUniswap(address owner, address weth, address usdc, address wbtc) public {
+    function initDeltaSwap(address owner, address weth, address usdc, address wbtc) public {
         // Let's do the same thing with `getCode`
         //bytes memory args = abi.encode(arg1, arg2);
 
-        uniFactory = new UniswapV2Factory(owner);
-        uniRouter = new UniswapV2Router02(address(uniFactory), weth);
+        uniFactory = new DeltaSwapFactory(owner);
+        uniRouter = new DeltaSwapRouter02(address(uniFactory), weth);
 
-        uniPair = UniswapV2Pair(createPair(address(usdc), address(wbtc)));
-        /*bytes memory bytecode = type(UniswapV2Pair).creationCode;
+        uniPair = DeltaSwapPair(createPair(address(usdc), address(wbtc)));
+        /*bytes memory bytecode = type(DeltaSwapPair).creationCode;
         bytes32 initCode = keccak256(bytecode);
         console.log("initCode");
         console.logBytes32(initCode);

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import './interfaces/IUniswapV2ERC20.sol';
+import './interfaces/IDeltaSwapERC20.sol';
 
-contract UniswapV2ERC20 is IUniswapV2ERC20 {
-    string public constant override name = 'Uniswap V2';
-    string public constant override symbol = 'UNI-V2';
+contract DeltaSwapERC20 is IDeltaSwapERC20 {
+    string public constant override name = 'DeltaSwap V1';
+    string public constant override symbol = 'DS-V1';
     uint8 public constant override decimals = 18;
     uint256  public override totalSupply;
     mapping(address => uint256) public override balanceOf;
@@ -74,7 +74,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
     }
 
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
-        require(deadline >= block.timestamp, 'UniswapV2: EXPIRED');
+        require(deadline >= block.timestamp, 'DeltaSwap: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -83,7 +83,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'UniswapV2: INVALID_SIGNATURE');
+        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DeltaSwap: INVALID_SIGNATURE');
         _approve(owner, spender, value);
     }
 }

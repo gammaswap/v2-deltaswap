@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.6.2;
 
-import './IUniswapV2Router01.sol';
+import './IDeltaSwapRouter01.sol';
 
-interface IUniswapV2Router02 is IUniswapV2Router01 {
+interface IDeltaSwapRouter02 is IDeltaSwapRouter01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
         uint256 liquidity,

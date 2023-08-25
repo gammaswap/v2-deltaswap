@@ -2,20 +2,20 @@
 pragma solidity =0.8.17;
 
 import './libraries/Babylonian.sol';
-import './libraries/UniswapV2LiquidityMathLibrary.sol';
+import './libraries/DeltaSwapLiquidityMathLibrary.sol';
 
 import '../interfaces/IERC20.sol';
-import '../interfaces/IUniswapV2Router01.sol';
-import '../interfaces/IUniswapV2Pair.sol';
+import '../interfaces/IDeltaSwapRouter01.sol';
+import '../interfaces/IDeltaSwapPair.sol';
 import '../libraries/TransferHelper.sol';
-import '../libraries/UniswapV2Library.sol';
+import '../libraries/DeltaSwapLibrary.sol';
 
 contract ExampleSwapToPrice {
 
-    IUniswapV2Router01 public immutable router;
+    IDeltaSwapRouter01 public immutable router;
     address public immutable factory;
 
-    constructor(address factory_, IUniswapV2Router01 router_) {
+    constructor(address factory_, IDeltaSwapRouter01 router_) {
         factory = factory_;
         router = router_;
     }
@@ -41,8 +41,8 @@ contract ExampleSwapToPrice {
         bool aToB;
         uint256 amountIn;
         {
-            (uint256 reserveA, uint256 reserveB,) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
-            (aToB, amountIn) = UniswapV2LiquidityMathLibrary.computeProfitMaximizingTrade(
+            (uint256 reserveA, uint256 reserveB,) = DeltaSwapLibrary.getReserves(factory, tokenA, tokenB);
+            (aToB, amountIn) = DeltaSwapLiquidityMathLibrary.computeProfitMaximizingTrade(
                 truePriceTokenA, truePriceTokenB,
                 reserveA, reserveB
             );
