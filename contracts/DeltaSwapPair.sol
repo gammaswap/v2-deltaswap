@@ -2,15 +2,14 @@
 pragma solidity =0.8.17;
 
 import './libraries/Math.sol';
-import './libraries/GammaSwapLib.sol';
 import './libraries/UQ112x112.sol';
 import './interfaces/IERC20.sol';
-import './interfaces/IUniswapV2Pair.sol';
-import './interfaces/IUniswapV2Factory.sol';
-import './interfaces/IUniswapV2Callee.sol';
-import './UniswapV2ERC20.sol';
+import './interfaces/IDeltaSwapPair.sol';
+import './interfaces/IDeltaSwapFactory.sol';
+import './interfaces/IDeltaSwapCallee.sol';
+import './DeltaSwapERC20.sol';
 
-contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
+contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     using UQ112x112 for uint224;
 
     uint256 public constant override MINIMUM_LIQUIDITY = 10**3;
@@ -39,7 +38,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
 
     uint256 private unlocked = 1;
     modifier lock() {
-        require(unlocked == 1, 'UniswapV2: LOCKED');
+        require(unlocked == 1, 'DeltaSwap: LOCKED');
         unlocked = 0;
         _;
         unlocked = 1;
@@ -53,7 +52,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
 
     function _safeTransfer(address token, address to, uint256 value) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'UniswapV2: TRANSFER_FAILED');
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'DeltaSwap: TRANSFER_FAILED');
     }
 
     constructor() {
@@ -62,20 +61,20 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
 
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1) external override {
-        require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
+        require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
         token0 = _token0;
         token1 = _token1;
     }
 
     // called by the factory after deployment
-    function setGammaPool(address gsFactory, address implementation, uint16 protocolId) external override {
-        require(msg.sender == factory, 'UniswapV2: FORBIDDEN'); // sufficient check
-        gammaPool = GammaSwapLib.predictDeterministicAddress(implementation, keccak256(abi.encode(address(this), protocolId)), gsFactory);
+    function setGammaPool(address pool) external override {
+        require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
+        gammaPool = pool;
     }
 
     // update reserves and, on the first call per block, price accumulators
     function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
-        require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'UniswapV2: OVERFLOW');
+        require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'DeltaSwap: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
@@ -84,7 +83,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
             price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
         }
         if(block.number != lastLiquidityBlockNumber) {
-            liquidityEMA = uint112(GammaSwapLib.calcEMA(Math.sqrt(balance0 * balance1), liquidityEMA, 10));
+            liquidityEMA = uint112(Math.calcEMA(Math.sqrt(balance0 * balance1), liquidityEMA, 10));
             lastLiquidityBlockNumber = uint32(block.number);
         }
         reserve0 = uint112(balance0);
@@ -94,7 +93,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
     }
 
     function _updateLiquidityTradedEMA(uint256 tradeLiquidity) internal virtual returns(uint256 _tradeLiquidityEMA) {
-        require(tradeLiquidity > 0, "UniswapV2: ZERO_TRADE_LIQUIDITY");
+        require(tradeLiquidity > 0, "DeltaSwap: ZERO_TRADE_LIQUIDITY");
         uint32 blockNum = uint32(block.number);
         uint256 blockDiff = blockNum - lastTradeBlockNumber;
         uint256 tradeLiquiditySum;
@@ -106,10 +105,23 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         }
     }
 
-    function calcTradingFee(uint256 tradeLiquidity) external virtual override view returns(uint256 fee) {
+    function estimateTradingFee(uint256 tradeLiquidity) external virtual override view returns(uint256 fee) {
         uint256 blockDiff = block.number - lastTradeBlockNumber;
         (uint256 _tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
-        fee = GammaSwapLib.calcTradingFee(_tradeLiquidityEMA, liquidityEMA);
+        fee = calcTradingFee(_tradeLiquidityEMA, liquidityEMA);
+    }
+
+    function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
+        if(lastLiquidityTradedEMA >= lastLiquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
+            if(lastLiquidityTradedEMA >= lastLiquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
+                if(lastLiquidityTradedEMA >= lastLiquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+                    return 3;
+                }
+                return 2;
+            }
+            return 1;
+        }
+        return 0;
     }
 
     function getLiquidityEMA() external virtual override view returns(uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) {
@@ -127,7 +139,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
         tradeLiquiditySum = _getLastTradeLiquiditySum(tradeLiquidity, blockDiff);
         lastTradeLiquidityEMA = _getLastTradeLiquidityEMA(blockDiff);
-        _tradeLiquidityEMA = tradeLiquidity > 0 ? GammaSwapLib.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
+        _tradeLiquidityEMA = tradeLiquidity > 0 ? Math.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
     }
 
     function getLastTradeLiquiditySum(uint256 tradeLiquidity) external virtual override view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum) {
@@ -159,7 +171,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
-        address feeTo = IUniswapV2Factory(factory).feeTo();
+        address feeTo = IDeltaSwapFactory(factory).feeTo();
         feeOn = feeTo != address(0);
         uint256 _kLast = kLast; // gas savings
         if (feeOn) {
@@ -194,7 +206,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         } else {
             liquidity = Math.min(amount0 * _totalSupply / _reserve0, amount1 * _totalSupply / _reserve1);
         }
-        require(liquidity > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED');
+        require(liquidity > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
 
         _update(balance0, balance1, _reserve0, _reserve1);
@@ -215,7 +227,7 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
         uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         amount0 = liquidity * balance0 / _totalSupply; // using balances ensures pro-rata distribution
         amount1 = liquidity * balance1 / _totalSupply; // using balances ensures pro-rata distribution
-        require(amount0 > 0 && amount1 > 0, 'UniswapV2: INSUFFICIENT_LIQUIDITY_BURNED');
+        require(amount0 > 0 && amount1 > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_BURNED');
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
         _safeTransfer(_token1, to, amount1);
@@ -229,37 +241,37 @@ contract UniswapV2Pair is UniswapV2ERC20, IUniswapV2Pair {
 
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external override lock {
-        require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amount0Out > 0 || amount1Out > 0, 'DeltaSwap: INSUFFICIENT_OUTPUT_AMOUNT');
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
-        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'UniswapV2: INSUFFICIENT_LIQUIDITY');
+        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'DeltaSwap: INSUFFICIENT_LIQUIDITY');
 
         uint256 balance0;
         uint256 balance1;
         { // scope for _token{0,1}, avoids stack too deep errors
             address _token0 = token0;
             address _token1 = token1;
-            require(to != _token0 && to != _token1, 'UniswapV2: INVALID_TO');
+            require(to != _token0 && to != _token1, 'DeltaSwap: INVALID_TO');
             if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
             if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
-            if (data.length > 0) IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
+            if (data.length > 0) IDeltaSwapCallee(to).deltaSwapCall(msg.sender, amount0Out, amount1Out, data);
             balance0 = IERC20(_token0).balanceOf(address(this));
             balance1 = IERC20(_token1).balanceOf(address(this));
         }
         uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
-        require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
+        require(amount0In > 0 || amount1In > 0, 'DeltaSwap: INSUFFICIENT_INPUT_AMOUNT');
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint256 fee = 0;
             if(msg.sender != gammaPool) {
-                fee = GammaSwapLib.calcTradingFee(
+                fee = calcTradingFee(
                     _updateLiquidityTradedEMA(
-                        GammaSwapLib.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
+                        Math.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
                     ),
                     liquidityEMA);
             }
             uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;
             uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;
-            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (1000**2), 'UniswapV2: K');
+            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (1000**2), 'DeltaSwap: K');
         }
 
         _update(balance0, balance1, _reserve0, _reserve1);

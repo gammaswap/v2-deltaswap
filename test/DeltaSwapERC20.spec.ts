@@ -8,7 +8,7 @@ import { expandTo18Decimals, getApprovalDigest } from './shared/utilities'
 const TOTAL_SUPPLY = expandTo18Decimals(10000)
 const TEST_AMOUNT = expandTo18Decimals(10)
 
-describe('UniswapV2ERC20', () => {
+describe('DeltaSwapERC20', () => {
     let ERC20: any;
     let wallet: any;
     let other: any;
@@ -22,8 +22,8 @@ describe('UniswapV2ERC20', () => {
 
     it('name, symbol, decimals, totalSupply, balanceOf, DOMAIN_SEPARATOR, PERMIT_TYPEHASH', async () => {
         const name = await token.name()
-        expect(name).to.eq('Uniswap V2')
-        expect(await token.symbol()).to.eq('UNI-V2')
+        expect(name).to.eq('DeltaSwap V1')
+        expect(await token.symbol()).to.eq('DS-V1')
         expect(await token.decimals()).to.eq(18)
         expect(await token.totalSupply()).to.eq(TOTAL_SUPPLY)
         expect(await token.balanceOf(wallet.address)).to.eq(TOTAL_SUPPLY)

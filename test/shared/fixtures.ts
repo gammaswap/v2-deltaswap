@@ -36,10 +36,10 @@ interface V2Fixture {
     WETHPair: Contract
 }
 
-let UniswapV2Factory: any;
-let UniswapV2Pair: any;
-let UniswapV2Router01: any;
-let UniswapV2Router02: any;
+let DeltaSwapFactory: any;
+let DeltaSwapPair: any;
+let DeltaSwapRouter01: any;
+let DeltaSwapRouter02: any;
 let RouterEventEmitter: any;
 let UniswapV1Factory: any;
 let UniswapV1Exchange: any;
@@ -47,8 +47,8 @@ let WETH9: any;
 let ERC20: any;
 
 export async function factoryFixture(wallet: any): Promise<FactoryFixture> {
-    UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory");
-    const factory = await UniswapV2Factory.deploy(wallet.address, overrides);
+    DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
+    const factory = await DeltaSwapFactory.deploy(wallet.address, overrides);
     return { factory }
 }
 
@@ -62,8 +62,8 @@ export async function pairFixture(wallet: any): Promise<PairFixture> {
     await factory.createPair(tokenA.address, tokenB.address, overrides)
     const pairAddress = await factory.getPair(tokenA.address, tokenB.address)
 
-    UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair");
-    const pair = UniswapV2Pair.attach(pairAddress);
+    DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+    const pair = DeltaSwapPair.attach(pairAddress);
 
     const token0Address = (await pair.token0())
     const tokenAisToken0 = BigNumber.from(tokenA.address.toString()).eq(BigNumber.from(token0Address));
@@ -91,14 +91,14 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
     await (await factoryV1.initializeFactory(exchangeV1.address, overrides)).wait();
 
     // deploy V2
-    UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory");
-    const factoryV2 = await UniswapV2Factory.deploy(wallet.address, overrides);
+    DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
+    const factoryV2 = await DeltaSwapFactory.deploy(wallet.address, overrides);
 
     // deploy routers
-    UniswapV2Router01 = await ethers.getContractFactory("UniswapV2Router01");
-    UniswapV2Router02 = await ethers.getContractFactory("UniswapV2Router02");
-    const router01 = await UniswapV2Router01.deploy(factoryV2.address, WETH.address, overrides);
-    const router02 = await UniswapV2Router02.deploy(factoryV2.address, WETH.address, overrides);
+    DeltaSwapRouter01 = await ethers.getContractFactory("DeltaSwapRouter01");
+    DeltaSwapRouter02 = await ethers.getContractFactory("DeltaSwapRouter02");
+    const router01 = await DeltaSwapRouter01.deploy(factoryV2.address, WETH.address, overrides);
+    const router02 = await DeltaSwapRouter02.deploy(factoryV2.address, WETH.address, overrides);
 
     // event emitter for testing
     RouterEventEmitter = await ethers.getContractFactory("RouterEventEmitter");
@@ -115,8 +115,8 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
     // initialize V2
     await factoryV2.createPair(tokenA.address, tokenB.address);
     const pairAddress = await factoryV2.getPair(tokenA.address, tokenB.address);
-    UniswapV2Pair = await ethers.getContractFactory("UniswapV2Pair");
-    const pair = UniswapV2Pair.attach(pairAddress);
+    DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+    const pair = DeltaSwapPair.attach(pairAddress);
 
     const token0Address = await pair.token0()
     const token0 = tokenA.address === token0Address ? tokenA : tokenB
@@ -124,7 +124,7 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
 
     await factoryV2.createPair(WETH.address, WETHPartner.address)
     const WETHPairAddress = await factoryV2.getPair(WETH.address, WETHPartner.address)
-    const WETHPair = UniswapV2Pair.attach(WETHPairAddress);
+    const WETHPair = DeltaSwapPair.attach(WETHPairAddress);
 
     return {
         token0,

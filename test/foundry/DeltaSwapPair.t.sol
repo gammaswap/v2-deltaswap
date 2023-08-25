@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.8.0;
 
-import "./fixtures/UniswapSetup.sol";
+import "./fixtures/DeltaSwapSetup.sol";
 
-contract UniswapV2PairTest is UniswapSetup {
+contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function setUp() public {
         usdc = new ERC20Test("USDC", "USDC");
@@ -22,7 +22,7 @@ contract UniswapV2PairTest is UniswapSetup {
         usdc.mint(addr2, amount);
         wbtc.mint(addr2, amount);
 
-        initUniswap(owner, address(weth), address(usdc), address(wbtc));
+        initDeltaSwap(owner, address(weth), address(usdc), address(wbtc));
 
         address[] memory _addresses = new address[](2);
         _addresses[0] = addr1;
@@ -53,9 +53,22 @@ contract UniswapV2PairTest is UniswapSetup {
         vm.stopPrank();
     }
 
+    function testCalcTradingFee(uint256 lastLiquidityTradedEMA, uint128 lastLiquidityEMA) public {
+        uint256 fee = dsPair.calcTradingFee(lastLiquidityTradedEMA, lastLiquidityEMA);
+        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+            assertEq(fee,3);
+        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 1000 / 10000) {// if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
+            assertEq(fee,2);
+        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 500 / 10000) {// if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
+            assertEq(fee,1);
+        } else {
+            assertEq(fee,0);
+        }
+    }
+
     function testTradingFees1pct() public {
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
@@ -63,7 +76,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 1*1e18);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
@@ -72,7 +85,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
     function testTradingFees2pct() public {
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
@@ -80,7 +93,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 2*1e18);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
@@ -89,7 +102,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
     function testTradingFees3pct() public {
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
@@ -97,7 +110,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 3*1e18);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
@@ -106,7 +119,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
     function testTradingFees4pct() public {
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
@@ -114,7 +127,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 4*1e18);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
@@ -123,7 +136,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
     function testTradingFees5pct() public {
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
@@ -131,7 +144,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 5*1e18);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
@@ -142,29 +155,30 @@ contract UniswapV2PairTest is UniswapSetup {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
-        bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
+        bytes32 gsPoolKey = keccak256(abi.encode(address(dsPair), protocolId));
 
-        address poolAddr = GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
 
-        vm.startPrank(address(uniFactory));
-        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
+        vm.startPrank(address(dsFactory));
+        dsPair.setGammaPool(poolAddr);
         vm.stopPrank();
 
-        assertEq(uniPair.gammaPool(), poolAddr);
+        assertEq(dsPair.gammaPool(), poolAddr);
     }
 
     function testSetGammaPoolFail() public {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
-        bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
-        vm.expectRevert("UniswapV2: FORBIDDEN");
-        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
+        bytes32 gsPoolKey = keccak256(abi.encode(address(dsPair), protocolId));
+        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        dsPair.setGammaPool(poolAddr);
     }
 
     function testTradingFeesGS() public {
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
@@ -173,26 +187,27 @@ contract UniswapV2PairTest is UniswapSetup {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
-        bytes32 gsPoolKey = keccak256(abi.encode(address(uniPair), protocolId));
+        bytes32 gsPoolKey = keccak256(abi.encode(address(dsPair), protocolId));
 
-        vm.startPrank(address(uniFactory));
-        uniPair.setGammaPool(gsFactory,  implementation, protocolId);
+        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+
+        vm.startPrank(address(dsFactory));
+        dsPair.setGammaPool(poolAddr);
         vm.stopPrank();
 
-        address poolAddr = GammaSwapLib.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
 
         wbtc.mint(poolAddr, 10*1e18);
         uint256 amountIn = 5*1e18;
 
-        (reserve0, reserve1,) = uniPair.getReserves();
-        uint256 amountOut = uniRouter.getAmountOut(amountIn, reserve0, reserve1, 0);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        uint256 amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 0);
 
         vm.startPrank(poolAddr);
-        wbtc.transfer(address(uniPair), amountIn);
-        uniPair.swap(0, amountOut, poolAddr, new bytes(0));
+        wbtc.transfer(address(dsPair), amountIn);
+        dsPair.swap(0, amountOut, poolAddr, new bytes(0));
         vm.stopPrank();
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
@@ -208,46 +223,46 @@ contract UniswapV2PairTest is UniswapSetup {
         uint256 lastTradeLiquidityEMA;
         uint256 tradeLiquiditySum;
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 0);
         assertEq(reserve1, 0);
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(tradeLiquidityEMA, 0);
         assertEq(lastTradeLiquidityEMA, 0);
         assertEq(tradeLiquiditySum, 0);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0*1e18);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0*1e18);
         assertEq(tradeLiquidityEMA, 1*1e18);
         assertEq(lastTradeLiquidityEMA, 1*1e18);
         assertEq(tradeLiquiditySum, 1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(1*1e18);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(1*1e18);
         assertEq(tradeLiquidityEMA, 12*1e17);
         assertEq(lastTradeLiquidityEMA, 1*1e18);
         assertEq(tradeLiquiditySum, 2*1e18);
 
         uint256 tradeLiq = calculateTradeLiquidity(1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(tradeLiq);
 
         uint256 expectedTradeLiquidityEMA = tradeLiquidityEMA;
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, 1*1e18 + tradeLiq);
 
         vm.roll(2);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA,lastTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, 0);
@@ -256,7 +271,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         tradeLiq = calculateTradeLiquidity(1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertLt(tradeLiquidityEMA,lastTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, tradeLiq);
@@ -265,7 +280,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, tradeLiq);
@@ -273,7 +288,7 @@ contract UniswapV2PairTest is UniswapSetup {
         uint256 prevTradeLiq = tradeLiq;
         tradeLiq = calculateTradeLiquidity(2*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertNotEq(tradeLiquidityEMA,expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, prevTradeLiq + tradeLiq);
@@ -282,7 +297,7 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 2*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, prevTradeLiq + tradeLiq);
@@ -291,14 +306,14 @@ contract UniswapV2PairTest is UniswapSetup {
 
         vm.roll(52);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, 0);
 
         tradeLiq = calculateTradeLiquidity(3*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertNotEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, tradeLiq);
@@ -307,28 +322,28 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 3*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, tradeLiq);
 
         vm.roll(102);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, 0);
 
         vm.roll(103);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, 0);
         assertEq(tradeLiquidityEMA, 0);
         assertEq(tradeLiquiditySum, 0);
 
         tradeLiq = calculateTradeLiquidity(4*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(tradeLiq);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(tradeLiq);
         assertEq(lastTradeLiquidityEMA, 0);
         assertEq(tradeLiquidityEMA, tradeLiq);
         assertEq(tradeLiquiditySum, tradeLiq);
@@ -337,15 +352,15 @@ contract UniswapV2PairTest is UniswapSetup {
 
         sell_wbtc(addr1, 4*1e18);
 
-        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = uniPair.getTradeLiquidityEMA(0);
+        (tradeLiquidityEMA, lastTradeLiquidityEMA, tradeLiquiditySum) = dsPair.getTradeLiquidityEMA(0);
         assertEq(lastTradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquidityEMA, expectedTradeLiquidityEMA);
         assertEq(tradeLiquiditySum, tradeLiq);
     }
 
     function calculateTradeLiquidity(uint256 amount) internal view returns(uint256) {
-        (uint256 reserve0, uint256 reserve1,) = uniPair.getReserves();
-        return GammaSwapLib.calcTradeLiquidity(amount, 0, reserve0, reserve1);
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        return Math.calcTradeLiquidity(amount, 0, reserve0, reserve1);
     }
 
     function testTradeLiquiditySum() public {
@@ -354,102 +369,102 @@ contract UniswapV2PairTest is UniswapSetup {
         uint256 tradeLiquiditySum;
         uint256 tradeBlockNum;
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 0);
         assertEq(reserve1, 0);
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeLiquiditySum, 0);
         assertEq(tradeBlockNum, 0);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 tradeLiq = GammaSwapLib.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        uint256 tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeLiquiditySum, tradeLiq);
         assertEq(tradeBlockNum, 1);
 
         uint256 prevTradeLiquiditySum = tradeLiquiditySum;
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(1e18);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(1e18);
         assertEq(tradeLiquiditySum, 2*1e18);
         assertEq(tradeBlockNum, 1);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(4*1e18);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(4*1e18);
         assertEq(tradeLiquiditySum, 5*1e18);
         assertEq(tradeBlockNum, 1);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0*1e18);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0*1e18);
         assertEq(tradeBlockNum, 1);
         assertEq(tradeLiquiditySum,tradeLiq + prevTradeLiquiditySum);
 
         prevTradeLiquiditySum = tradeLiquiditySum;
 
-        (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 1*1e18);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(2*1e18);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(2*1e18);
         assertEq(tradeBlockNum, 1);
         assertEq(tradeLiquiditySum,tradeLiq + prevTradeLiquiditySum + 2*1e18);
 
         vm.roll(2);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeBlockNum, 1);
         assertEq(tradeLiquiditySum,0);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(2*1e18);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(2*1e18);
         assertEq(tradeBlockNum, 1);
         assertEq(tradeLiquiditySum,2*1e18);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        tradeLiq = Math.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 2*1e18);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeBlockNum, 2);
         assertEq(tradeLiquiditySum,tradeLiq);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(tradeLiq);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(tradeLiq);
         assertEq(tradeBlockNum, 2);
         assertEq(tradeLiquiditySum,tradeLiq * 2);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        tradeLiq = Math.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         prevTradeLiquiditySum = tradeLiquiditySum;
 
         sell_wbtc(addr1, 2*1e18);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeBlockNum, 2);
         assertEq(tradeLiquiditySum,prevTradeLiquiditySum + tradeLiq);
 
         vm.roll(10);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeBlockNum, 2);
         assertEq(tradeLiquiditySum,0);
 
-        (reserve0, reserve1,) = uniPair.getReserves();
-        tradeLiq = GammaSwapLib.calcTradeLiquidity(3*1e18, 0, reserve0, reserve1);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        tradeLiq = Math.calcTradeLiquidity(3*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 3*1e18);
 
-        (tradeLiquiditySum, tradeBlockNum) = uniPair.getLastTradeLiquiditySum(0);
+        (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         assertEq(tradeBlockNum, 10);
         assertEq(tradeLiquiditySum, tradeLiq);
     }
@@ -460,97 +475,97 @@ contract UniswapV2PairTest is UniswapSetup {
         uint256 liquidityEMA;
         uint256 lastLiquidityEMABlockNum;
 
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 0);
         assertEq(reserve1, 0);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 0);
         assertEq(liquidityEMA, 0);
 
         depositLiquidityInCFMM(addr1, 1*1e18, 1*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 1*1e18);
         assertEq(reserve1, 1*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 1);
         assertEq(liquidityEMA, 1*1e18);
 
         depositLiquidityInCFMM(addr1, 1*1e18, 1*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 2*1e18);
         assertEq(reserve1, 2*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 1);
         assertEq(liquidityEMA, 1*1e18);
 
         vm.roll(2);
 
         depositLiquidityInCFMM(addr1, 1*1e18, 1*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 3*1e18);
         assertEq(reserve1, 3*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 2);
         assertEq(liquidityEMA, 12*1e17);
 
         vm.roll(6);
 
         depositLiquidityInCFMM(addr1, 3*1e18, 3*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 6*1e18);
         assertEq(reserve1, 6*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 6);
         assertEq(liquidityEMA, 168*1e16);
 
         withdrawLiquidityFromCFMM(addr1, 4*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 2*1e18);
         assertEq(reserve1, 2*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 6);
         assertEq(liquidityEMA, 168*1e16);
 
         depositLiquidityInCFMM(addr1, 2*1e18, 2*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 4*1e18);
         assertEq(reserve1, 4*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 6);
         assertEq(liquidityEMA, 168*1e16);
 
         vm.roll(7);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 4*1e18);
         assertEq(reserve1, 4*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 6);
         assertEq(liquidityEMA, 168*1e16); // not updated yet
 
-        uniPair.sync();
-        (reserve0, reserve1,) = uniPair.getReserves();
+        dsPair.sync();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 4*1e18);
         assertEq(reserve1, 4*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 7);
         assertEq(liquidityEMA, 1912*1e15);
 
         vm.roll(10);
         depositLiquidityInCFMM(addr1, 4*1e18, 4*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 8*1e18);
         assertEq(reserve1, 8*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 10);
         assertEq(liquidityEMA, 25208*1e14);
 
         vm.roll(11);
 
         withdrawLiquidityFromCFMM(addr1, 6*1e18);
-        (reserve0, reserve1,) = uniPair.getReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 2*1e18);
         assertEq(reserve1, 2*1e18);
-        (liquidityEMA,lastLiquidityEMABlockNum) = uniPair.getLiquidityEMA();
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
         assertEq(lastLiquidityEMABlockNum, 11);
         assertEq(liquidityEMA, 246872*1e13);
     }

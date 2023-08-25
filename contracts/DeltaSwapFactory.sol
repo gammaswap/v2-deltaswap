@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.17;
 
-import './interfaces/IUniswapV2Factory.sol';
-import './UniswapV2Pair.sol';
+import './libraries/DeltaSwapLibrary.sol';
+import './interfaces/IDeltaSwapFactory.sol';
+import './DeltaSwapPair.sol';
 
-contract UniswapV2Factory is IUniswapV2Factory {
+contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeTo;
     address public override feeToSetter;
 
@@ -20,16 +21,16 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function createPair(address tokenA, address tokenB) external override returns (address pair) {
-        require(tokenA != tokenB, 'UniswapV2: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, 'DeltaSwap: IDENTICAL_ADDRESSES');
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'UniswapV2: ZERO_ADDRESS');
-        require(getPair[token0][token1] == address(0), 'UniswapV2: PAIR_EXISTS'); // single check is sufficient
-        bytes memory bytecode = type(UniswapV2Pair).creationCode;
+        require(token0 != address(0), 'DeltaSwap: ZERO_ADDRESS');
+        require(getPair[token0][token1] == address(0), 'DeltaSwap: PAIR_EXISTS'); // single check is sufficient
+        bytes memory bytecode = type(DeltaSwapPair).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
-        IUniswapV2Pair(pair).initialize(token0, token1);
+        IDeltaSwapPair(pair).initialize(token0, token1);
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
@@ -37,17 +38,20 @@ contract UniswapV2Factory is IUniswapV2Factory {
     }
 
     function setFeeTo(address _feeTo) external override {
-        require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
         feeTo = _feeTo;
     }
 
     function setFeeToSetter(address _feeToSetter) external override {
-        require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
         feeToSetter = _feeToSetter;
     }
 
     function setGammaPool(address tokenA, address tokenB, address gsFactory, address implementation, uint16 protocolId) external override {
-        require(msg.sender == feeToSetter, 'UniswapV2: FORBIDDEN');
-        IUniswapV2Pair(getPair[tokenA][tokenB]).setGammaPool(gsFactory, implementation, protocolId);
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        address pair = getPair[tokenA][tokenB];
+        address gammaPool = DeltaSwapLibrary.predictDeterministicAddress(implementation, keccak256(abi.encode(pair, protocolId)), gsFactory);
+        IDeltaSwapPair(pair).setGammaPool(gammaPool);
+        emit GammaPoolSet(tokenA, tokenB, pair, gammaPool);
     }
 }
