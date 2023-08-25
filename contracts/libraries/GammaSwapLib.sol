@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-v3
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0;
 
 import './Math.sol';
 
 library GammaSwapLib {
 
-    function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) internal view returns(uint256) {
+    function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) internal pure returns(uint256) {
         if(lastLiquidityTradedEMA >= lastLiquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
             if(lastLiquidityTradedEMA >= lastLiquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
                 if(lastLiquidityTradedEMA >= lastLiquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
@@ -18,11 +18,15 @@ library GammaSwapLib {
         return 0;
     }
 
+    function calcSingleSideLiquidity(uint256 amount, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {
+        return Math.sqrt(amount * (amount * reserve1 / reserve0));//sqrt(A*P*A) = L
+    }
+
     function calcTradeLiquidity(uint256 amount0, uint256 amount1, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {
         if(amount0 > 0) {
-            return Math.sqrt(amount0 * amount0 * reserve1 / reserve0);
+            return calcSingleSideLiquidity(amount0, reserve0, reserve1);
         } else if(amount1 > 0) {
-            return Math.sqrt(amount1 * amount1 * reserve0 / reserve1);
+            return calcSingleSideLiquidity(amount1, reserve1, reserve0);
         }
         return 0;
     }
@@ -33,6 +37,7 @@ library GammaSwapLib {
     /// @param emaWeight - weight given to last value in ema calculation compared to last ema value
     /// @return ema - result of ema calculation
     function calcEMA(uint256 last, uint256 emaLast, uint256 emaWeight) internal pure returns(uint256) {
+        require(emaWeight <= 100, "EMA_WEIGHT > 100");
         if(emaLast == 0) {
             return last;
         } else {
