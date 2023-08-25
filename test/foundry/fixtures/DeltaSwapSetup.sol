@@ -23,50 +23,50 @@ contract DeltaSwapSetup is Test {
     address public addr1;
     address public addr2;
 
-    IDeltaSwapFactory public uniFactory;
-    IDeltaSwapRouter02 public uniRouter;
-    IDeltaSwapPair public uniPair;
+    IDeltaSwapFactory public dsFactory;
+    IDeltaSwapRouter02 public dsRouter;
+    IDeltaSwapPair public dsPair;
 
     function initDeltaSwap(address owner, address weth, address usdc, address wbtc) public {
         // Let's do the same thing with `getCode`
         //bytes memory args = abi.encode(arg1, arg2);
 
-        uniFactory = new DeltaSwapFactory(owner);
-        uniRouter = new DeltaSwapRouter02(address(uniFactory), weth);
+        dsFactory = new DeltaSwapFactory(owner);
+        dsRouter = new DeltaSwapRouter02(address(dsFactory), weth);
 
-        uniPair = DeltaSwapPair(createPair(address(usdc), address(wbtc)));
+        dsPair = DeltaSwapPair(createPair(address(usdc), address(wbtc)));
         /*bytes memory bytecode = type(DeltaSwapPair).creationCode;
         bytes32 initCode = keccak256(bytecode);
         console.log("initCode");
         console.logBytes32(initCode);
-        console.log("uniPair");
-        console.log(address(uniPair));/**/
+        console.log("dsPair");
+        console.log(address(dsPair));/**/
     }
 
     function createPair(address token0, address token1) public returns(address) {
-        return uniFactory.createPair(token0, token1);
+        return dsFactory.createPair(token0, token1);
     }
 
     function addLiquidity(address token0, address token1, uint256 amount0, uint256 amount1, address to) public returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
-        (amountA, amountB, liquidity) = uniRouter.addLiquidity(token0, token1, amount0, amount1, 0, 0, to, type(uint256).max);
+        (amountA, amountB, liquidity) = dsRouter.addLiquidity(token0, token1, amount0, amount1, 0, 0, to, type(uint256).max);
     }
 
     function removeLiquidity(address token0, address token1, uint256 liquidity) public returns (uint256 amount0, uint256 amount1) {
-        return uniRouter.removeLiquidity(token0, token1, liquidity, 0, 0, msg.sender, type(uint256).max);
+        return dsRouter.removeLiquidity(token0, token1, liquidity, 0, 0, msg.sender, type(uint256).max);
     }
 
     function buyTokenOut(uint256 amountOut, address tokenIn, address tokenOut) public returns(uint256[] memory amounts) {
         address[] memory path = new address[](2);
         path[0] = tokenIn;
         path[1] = tokenOut;
-        return uniRouter.swapTokensForExactTokens(amountOut, type(uint256).max, path, msg.sender, type(uint256).max);
+        return dsRouter.swapTokensForExactTokens(amountOut, type(uint256).max, path, msg.sender, type(uint256).max);
     }
 
     function sellTokenIn(uint256 amountIn, address tokenIn, address tokenOut, address to) public returns(uint256[] memory amounts) {
         address[] memory path = new address[](2);
         path[0] = tokenIn;
         path[1] = tokenOut;
-        return uniRouter.swapExactTokensForTokens(amountIn, 0, path, to, type(uint256).max);
+        return dsRouter.swapExactTokensForTokens(amountIn, 0, path, to, type(uint256).max);
     }
 
     function approveRouter(address[] memory _addresses, address[] memory _tokens) public {
@@ -78,9 +78,9 @@ contract DeltaSwapSetup is Test {
     function approveRouterForAddress(address _address, address[] memory _tokens) public {
         vm.startPrank(_address);
         for(uint256 j = 0; j < _tokens.length;j++) {
-            IERC20Test(_tokens[j]).approve(address(uniRouter), type(uint256).max);
+            IERC20Test(_tokens[j]).approve(address(dsRouter), type(uint256).max);
         }
-        uniPair.approve(address(uniRouter), type(uint256).max);
+        dsPair.approve(address(dsRouter), type(uint256).max);
         vm.stopPrank();
     }
 }
