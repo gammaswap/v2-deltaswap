@@ -5,6 +5,14 @@ import "./fixtures/DeltaSwapSetup.sol";
 
 contract DeltaSwapPairTest is DeltaSwapSetup {
 
+    WETH9 public weth;
+    ERC20Test public usdc;
+    ERC20Test public wbtc;
+
+    address public owner;
+    address public addr1;
+    address public addr2;
+
     function setUp() public {
         usdc = new ERC20Test("USDC", "USDC");
         wbtc = new ERC20Test("Wrapped Bitcoin", "WBTC");
@@ -217,8 +225,6 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     function testTradeLiquidityEMA() public {
         uint128 reserve0;
         uint128 reserve1;
-        uint256 tradeSum;
-        uint256 tradeBlockNum;
         uint256 tradeLiquidityEMA;
         uint256 lastTradeLiquidityEMA;
         uint256 tradeLiquiditySum;
