@@ -15,14 +15,6 @@ import "../../../contracts/test/ERC20Test.sol";
 
 contract DeltaSwapSetup is Test {
 
-    WETH9 public weth;
-    ERC20Test public usdc;
-    ERC20Test public wbtc;
-
-    address public owner;
-    address public addr1;
-    address public addr2;
-
     IDeltaSwapFactory public dsFactory;
     IDeltaSwapRouter02 public dsRouter;
     IDeltaSwapPair public dsPair;

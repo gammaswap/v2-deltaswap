@@ -55,9 +55,9 @@ contract ERC20Test is IERC20Test {
         emit Transfer(from, address(0), value);
     }
 
-    function _approve(address owner, address spender, uint256 value) private {
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
+    function _approve(address _owner, address spender, uint256 value) private {
+        allowance[_owner][spender] = value;
+        emit Approval(_owner, spender, value);
     }
 
     function _transfer(address from, address to, uint256 value) private {
@@ -84,17 +84,17 @@ contract ERC20Test is IERC20Test {
         return true;
     }
 
-    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
+    function permit(address _owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
         require(deadline >= block.timestamp, 'DeltaSwap: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+                keccak256(abi.encode(PERMIT_TYPEHASH, _owner, spender, value, nonces[_owner]++, deadline))
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DeltaSwap: INVALID_SIGNATURE');
-        _approve(owner, spender, value);
+        require(recoveredAddress != address(0) && recoveredAddress == _owner, 'DeltaSwap: INVALID_SIGNATURE');
+        _approve(_owner, spender, value);
     }
 }
