@@ -15,7 +15,8 @@
   },
   "scripts": {
     "hardhat": "hardhat",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "fuzz": "forge test"
   },
   "author": "Daniel Alcarraz <dalcarraz@gammaswap.com>",
   "license": "GPL-3.0-or-later",

@@ -112,9 +112,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
-        if(lastLiquidityTradedEMA >= lastLiquidityEMA * 500 / 10000) { // if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
-            if(lastLiquidityTradedEMA >= lastLiquidityEMA * 1000 / 10000) { // if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
-                if(lastLiquidityTradedEMA >= lastLiquidityEMA * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+        if(lastLiquidityTradedEMA >= lastLiquidityEMA * 50 / 10000) { // if trade >= 0.5% of liquidity, charge 0.3% fee => 1% of liquidity value, ~2.01% px change and 1 % slippage
+            if(lastLiquidityTradedEMA >= lastLiquidityEMA * 100 / 10000) { // if trade >= 1% of liquidity, charge 1% fee => 2% of liquidity value, ~4.04% px change and 2 % slippage
+                if(lastLiquidityTradedEMA >= lastLiquidityEMA * 200 / 10000) {// if trade >= 2% of liquidity, charge 3% fee => 4% of liquidity value, ~8.16% px change and 4% slippage
                     return 3;
                 }
                 return 2;
