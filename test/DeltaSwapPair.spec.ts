@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 import { expect } from 'chai'
 import { BigNumber, Contract, constants } from 'ethers'
 
-import { expandTo18Decimals, mineBlock, encodePrice, sqrt, calcTradeLiquidity } from './shared/utilities'
+import { expandTo18Decimals, mineBlock, encodePrice } from './shared/utilities'
 import { pairFixture} from './shared/fixtures'
 
 const MINIMUM_LIQUIDITY = BigNumber.from(10).pow(3)
@@ -54,9 +54,6 @@ describe('DeltaSwapPair', () => {
         const reserves = await pair.getReserves()
         expect(reserves[0]).to.eq(token0Amount)
         expect(reserves[1]).to.eq(token1Amount)
-
-
-
     })
 
     async function addLiquidity(token0Amount: BigNumber, token1Amount: BigNumber) {
