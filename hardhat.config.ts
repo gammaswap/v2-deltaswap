@@ -8,6 +8,8 @@ require("hardhat-contract-sizer"); // "npx hardhat size-contracts" or "yarn run 
 
 dotenv.config();
 
+import "./tasks/swap-amounts";
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.21",

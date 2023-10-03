@@ -7,7 +7,7 @@ import './libraries/DeltaSwapLiquidityMathLibrary.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IDeltaSwapRouter01.sol';
 import '../interfaces/IDeltaSwapPair.sol';
-import '../libraries/TransferHelper.sol';
+import '../libraries/DSTransferHelper.sol';
 import '../libraries/DeltaSwapLibrary.sol';
 
 contract ExampleSwapToPrice {
@@ -58,8 +58,8 @@ contract ExampleSwapToPrice {
 
         address tokenIn = aToB ? tokenA : tokenB;
         address tokenOut = aToB ? tokenB : tokenA;
-        TransferHelper.safeTransferFrom(tokenIn, msg.sender, address(this), amountIn);
-        TransferHelper.safeApprove(tokenIn, address(router), amountIn);
+        DSTransferHelper.safeTransferFrom(tokenIn, msg.sender, address(this), amountIn);
+        DSTransferHelper.safeApprove(tokenIn, address(router), amountIn);
 
         address[] memory path = new address[](2);
         path[0] = tokenIn;

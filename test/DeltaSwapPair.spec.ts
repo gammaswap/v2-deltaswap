@@ -64,13 +64,13 @@ describe('DeltaSwapPair', () => {
 
     const swapTestCases: BigNumber[][] = [
         [1, 5, 10, '1662497915624478906'],
-        [1, 10, 5, '453718857974177123'],
+        [1, 10, 5, '453305446940074565'],
 
         [2, 5, 10, '2851015155847869602'],
         [2, 10, 5, '831248957812239453'],
 
-        [1, 10, 10, '907437715948354246'],
-        [1, 100, 100, '990099009900990099'],
+        [1, 10, 10, '906610893880149131'],
+        [1, 100, 100, '988138378977801540'],
         [1, 1000, 1000, '999000999000999000']
     ].map(a => a.map(n => (typeof n === 'string' ? BigNumber.from(n) : expandTo18Decimals(n))));
     swapTestCases.forEach((swapTestCase, i) => {
@@ -87,7 +87,7 @@ describe('DeltaSwapPair', () => {
 
     const optimisticTestCases: BigNumber[][] = [
         ['997000000000000000', 5, 10, 1], // given amountIn, amountOut = floor(amountIn * .997)
-        ['998000000000000000', 10, 5, 1],
+        ['997000000000000000', 10, 5, 1],
         ['997000000000000000', 5, 5, 1],
         [1, 5, 5, '1003009027081243732'] // given amountOut, amountIn = ceiling(amountOut / .997)
     ].map(a => a.map(n => (typeof n === 'string' ? BigNumber.from(n) : expandTo18Decimals(n))))
@@ -172,7 +172,7 @@ describe('DeltaSwapPair', () => {
         await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
         const tx = await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(124055)
+        expect(receipt.gasUsed).to.eq(124270)
     })
 
     it('burn', async () => {

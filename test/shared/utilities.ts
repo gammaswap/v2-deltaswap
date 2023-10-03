@@ -79,3 +79,27 @@ export async function mineBlock(provider: any, timestamp: number): Promise<void>
 export function encodePrice(reserve0: BigNumber, reserve1: BigNumber) {
     return [reserve1.mul(BigNumber.from(2).pow(112)).div(reserve0), reserve0.mul(BigNumber.from(2).pow(112)).div(reserve1)]
 }
+
+export const sqrt = (y: BigNumber): BigNumber => {
+    let z = BigNumber.from(0);
+    if (y.gt(3)) {
+        z = y;
+        let x = y.div(2).add(1);
+        while (x.lt(z)) {
+            z = x;
+            x = y.div(x).add(x).div(2);
+        }
+    } else if (!y.isZero()) {
+        z = BigNumber.from(1);
+    }
+    return z;
+};
+
+export const calcTradeLiquidity = (amount0: BigNumber, amount1: BigNumber, reserve0: BigNumber, reserve1: BigNumber) : BigNumber => {
+    if(amount0.gt(0)) {
+        return sqrt((amount0.mul(reserve1).div(reserve0)).mul(amount0))
+    } else if(amount1.gt(0)) {
+        return sqrt((amount1.mul(reserve0).div(reserve1)).mul(amount1))
+    }
+    return BigNumber.from(0);
+}

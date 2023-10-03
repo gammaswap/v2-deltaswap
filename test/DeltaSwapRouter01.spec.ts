@@ -371,8 +371,8 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 170794,
-                            [RouterVersion.DeltaSwapRouter02]: 170895
+                            [RouterVersion.DeltaSwapRouter01]: 170984,
+                            [RouterVersion.DeltaSwapRouter02]: 171085
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
@@ -381,7 +381,7 @@ describe('DeltaSwapRouter{01,02}', () => {
             describe('swapTokensForExactTokens', () => {
                 const token0Amount = expandTo18Decimals(5)
                 const token1Amount = expandTo18Decimals(10)
-                const expectedSwapAmount = BigNumber.from('556668893342240036')
+                const expectedSwapAmount = BigNumber.from('557227237267357629')
                 const outputAmount = expandTo18Decimals(1)
 
                 beforeEach(async () => {
@@ -520,8 +520,8 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 174453,
-                            [RouterVersion.DeltaSwapRouter02]: 174475
+                            [RouterVersion.DeltaSwapRouter01]: 174641,
+                            [RouterVersion.DeltaSwapRouter02]: 174663
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
@@ -530,7 +530,7 @@ describe('DeltaSwapRouter{01,02}', () => {
             describe('swapTokensForExactETH', () => {
                 const WETHPartnerAmount = expandTo18Decimals(5)
                 const ETHAmount = expandTo18Decimals(10)
-                const expectedSwapAmount = BigNumber.from('556668893342240036')
+                const expectedSwapAmount = BigNumber.from('557227237267357629')
                 const outputAmount = expandTo18Decimals(1)
 
                 beforeEach(async () => {
@@ -666,7 +666,7 @@ describe('DeltaSwapRouter{01,02}', () => {
             describe('swapETHForExactTokens', () => {
                 const WETHPartnerAmount = expandTo18Decimals(10)
                 const ETHAmount = expandTo18Decimals(5)
-                const expectedSwapAmount = BigNumber.from('556668893342240036')
+                const expectedSwapAmount = BigNumber.from('557227237267357629')
                 const outputAmount = expandTo18Decimals(1)
 
                 beforeEach(async () => {
