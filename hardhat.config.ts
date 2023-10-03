@@ -12,7 +12,7 @@ import "./tasks/swap-amounts";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.21",
+    version: "0.8.19",
     settings: {
       optimizer: {
         enabled: true,
