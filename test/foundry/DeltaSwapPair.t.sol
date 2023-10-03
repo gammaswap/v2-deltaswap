@@ -63,15 +63,66 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testCalcTradingFee(uint256 lastLiquidityTradedEMA, uint128 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(lastLiquidityTradedEMA, lastLiquidityEMA);
-        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 2000 / 10000) {// if trade > 20% of liquidity, charge 1% fee => ~10% of liquidity value, ~40% px change
+        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 200 / 10000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
             assertEq(fee,3);
-        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 1000 / 10000) {// if trade > 10% of liquidity, charge 0.3% fee => ~5% of liquidity value, ~20% px change
+        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 100 / 10000) {// if trade >= 1% of liquidity, charge 0.2% fee => 0.5% of liquidity value, ~2.01% px change and 1.3% slippage
             assertEq(fee,2);
-        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 500 / 10000) {// if trade > 5% of liquidity, charge 0.1% fee => ~2.5% of liquidity value, ~10% px change
+        } else if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * 50 / 10000) {// if trade >= 0.5% of liquidity, charge 0.1% fee => 0.25% of liquidity value, ~1% px change and 0.8 % slippage
             assertEq(fee,1);
         } else {
             assertEq(fee,0);
         }
+    }
+
+    function testTradingFeesHalfPctMinus1() public {
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 5*1e17 - 1);
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
+    }
+
+    function testTradingFeesHalfPct() public {
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 5*1e17);
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
+    }
+
+    function testTradingFeesHalfPctPlus1() public {
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 5*1e17 + 1);
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
     }
 
     function testTradingFees1pct() public {
@@ -82,13 +133,15 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
         uint256 liquidity = Math.sqrt(reserve0 * reserve1);
 
-        sell_wbtc(addr1, 1*1e18);
+        sell_wbtc(addr1, 1e18);
 
         (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
+        uint256 liqDiff = Math.sqrt(reserve0 * reserve1) - liquidity;
+        uint256 ret = liqDiff * 1e18 / liquidity;
+        assertLt(2*4950531810910, ret);
     }
 
     function testTradingFees2pct() public {
@@ -105,58 +158,9 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
-    }
-
-    function testTradingFees3pct() public {
-        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
-        assertEq(reserve0, 100*1e18);
-        assertEq(reserve1, 100*1e18);
-
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
-
-        sell_wbtc(addr1, 3*1e18);
-
-        (reserve0, reserve1,) = dsPair.getReserves();
-        assertNotEq(reserve0, 100*1e18);
-        assertNotEq(reserve1, 100*1e18);
-
-        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
-    }
-
-    function testTradingFees4pct() public {
-        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
-        assertEq(reserve0, 100*1e18);
-        assertEq(reserve1, 100*1e18);
-
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
-
-        sell_wbtc(addr1, 4*1e18);
-
-        (reserve0, reserve1,) = dsPair.getReserves();
-        assertNotEq(reserve0, 100*1e18);
-        assertNotEq(reserve1, 100*1e18);
-
-        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
-    }
-
-    function testTradingFees5pct() public {
-        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
-        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
-        assertEq(reserve0, 100*1e18);
-        assertEq(reserve1, 100*1e18);
-
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
-
-        sell_wbtc(addr1, 5*1e18);
-
-        (reserve0, reserve1,) = dsPair.getReserves();
-        assertNotEq(reserve0, 100*1e18);
-        assertNotEq(reserve1, 100*1e18);
-
-        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
+        uint256 liqDiff = Math.sqrt(reserve0 * reserve1) - liquidity;
+        uint256 ret = liqDiff * 1e18 / liquidity;
+        assertLt(3*19608419857370/2, ret);
     }
 
     function testSetGammaPool() public {
@@ -203,7 +207,6 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         dsPair.setGammaPool(poolAddr);
         vm.stopPrank();
 
-
         wbtc.mint(poolAddr, 10*1e18);
         uint256 amountIn = 5*1e18;
 
@@ -212,6 +215,18 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
         vm.startPrank(poolAddr);
         wbtc.transfer(address(dsPair), amountIn);
+        vm.expectRevert("DeltaSwap: K");
+        dsPair.swap(0, amountOut, poolAddr, new bytes(0));
+
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 1);
+        vm.expectRevert("DeltaSwap: K");
+        dsPair.swap(0, amountOut, poolAddr, new bytes(0));
+
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 2);
+        vm.expectRevert("DeltaSwap: K");
+        dsPair.swap(0, amountOut, poolAddr, new bytes(0));
+
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 3);
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
         vm.stopPrank();
 
@@ -219,7 +234,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
+        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
     }
 
     function testTradeLiquidityEMA() public {
