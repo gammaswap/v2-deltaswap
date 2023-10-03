@@ -18,9 +18,10 @@ contract DeltaSwapLibraryTest is Test {
         assertEq(DSMath.calcTradeLiquidity(0, 0, reserve0, reserve1), 0);
     }
 
-    function testCalcEMAFail() public {
-        vm.expectRevert("EMA_WEIGHT > 100");
-        DSMath.calcEMA(1, 1, 101);
+    function testCalcEMAWeight() public {
+        assertGt(600,DSMath.calcEMA(600, 300, 99));
+        assertEq(600,DSMath.calcEMA(600, 300, 100));
+        assertEq(600,DSMath.calcEMA(600, 300, 101));
     }
 
     function testCalcEMA0pctWeight() public {

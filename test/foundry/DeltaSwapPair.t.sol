@@ -490,6 +490,56 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(tradeLiquiditySum, tradeLiq);
     }
 
+    function testLiquidityEMATime() public {
+        uint128 reserve0;
+        uint128 reserve1;
+        uint256 liquidityEMA;
+        uint256 lastLiquidityEMABlockNum;
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 0);
+        assertEq(reserve1, 0);
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
+        assertEq(lastLiquidityEMABlockNum, 0);
+        assertEq(liquidityEMA, 0);
+
+        depositLiquidityInCFMM(addr1, 1*1e18, 1*1e18);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 1*1e18);
+        assertEq(reserve1, 1*1e18);
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
+        assertEq(lastLiquidityEMABlockNum, 1);
+        assertEq(liquidityEMA, 1*1e18);
+
+        depositLiquidityInCFMM(addr1, 1*1e18, 1*1e18);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 2*1e18);
+        assertEq(reserve1, 2*1e18);
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
+        assertEq(lastLiquidityEMABlockNum, 1);
+        assertEq(liquidityEMA, 1*1e18);
+
+        vm.roll(2);
+
+        depositLiquidityInCFMM(addr1, 1*1e18, 1*1e18);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 3*1e18);
+        assertEq(reserve1, 3*1e18);
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
+        assertEq(lastLiquidityEMABlockNum, 2);
+        assertEq(liquidityEMA, 12*1e17);
+
+        vm.roll(106);
+
+        depositLiquidityInCFMM(addr1, 3*1e18, 3*1e18);
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 6*1e18);
+        assertEq(reserve1, 6*1e18);
+        (liquidityEMA,lastLiquidityEMABlockNum) = dsPair.getLiquidityEMA();
+        assertEq(lastLiquidityEMABlockNum, 106);
+        assertEq(liquidityEMA, 6*1e18);
+    }
+
     function testLiquidityEMA() public {
         uint128 reserve0;
         uint128 reserve1;
