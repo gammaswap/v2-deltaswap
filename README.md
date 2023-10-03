@@ -15,6 +15,9 @@
 ## Description
 DeltaSwap is an AMM that employes the constant product market maker formula used by UniswapV2 but without or low trading fees on transactions with low market impact
 
+## Note
+Built with solidity version 0.8.19 because Arbitrum doesn't support 0.8.21
+
 ## Steps to Run GammaSwap Tests Locally
 
 1. Run `yarn` to install GammaSwap dependencies

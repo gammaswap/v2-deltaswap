@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3
-pragma solidity =0.8.21;
+pragma solidity =0.8.19;
 
 import '../DeltaSwapERC20.sol';
 
