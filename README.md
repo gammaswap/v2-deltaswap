@@ -22,4 +22,10 @@ Built with solidity version 0.8.19 because Arbitrum doesn't support 0.8.21
 
 1. Run `yarn` to install GammaSwap dependencies
 2. Run `yarn test` to run hardhat tests
-2. Run `yarn fyzz` to run foundry tests (must use second init code hash when running foundry tests)
+3. Run `yarn fuzz` to run foundry tests 
+   
+    *must use second init code hash when running foundry tests.
+
+## Note 
+If code is updated print init code hash for hardhat tests from DeltaSwapFactory.spec.ts. Uncomment the part in the BeforeEach statement. This is the first init_code_hash shown in DeltaSwapLibrary.sol.
+For foundry tests uncomment the part in DeltaSwapSetup.sol initDeltaSwap. This is the second init code hash 
