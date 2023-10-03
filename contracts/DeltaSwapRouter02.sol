@@ -27,9 +27,9 @@ contract DeltaSwapRouter02 is DeltaSwapRouter01, IDeltaSwapRouter02 {
             address(this),
             deadline
         );
-        TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
+        DSTransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
         IWETH(WETH).withdraw(amountETH);
-        TransferHelper.safeTransferETH(to, amountETH);
+        DSTransferHelper.safeTransferETH(to, amountETH);
     }
     function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
         address token,
@@ -75,7 +75,7 @@ contract DeltaSwapRouter02 is DeltaSwapRouter01, IDeltaSwapRouter02 {
         address to,
         uint256 deadline
     ) external virtual override ensure(deadline) {
-        TransferHelper.safeTransferFrom(
+        DSTransferHelper.safeTransferFrom(
             path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
         );
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
@@ -121,14 +121,14 @@ contract DeltaSwapRouter02 is DeltaSwapRouter01, IDeltaSwapRouter02 {
     ensure(deadline)
     {
         require(path[path.length - 1] == WETH, 'DeltaSwapRouter: INVALID_PATH');
-        TransferHelper.safeTransferFrom(
+        DSTransferHelper.safeTransferFrom(
             path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
         );
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint256 amountOut = IERC20(WETH).balanceOf(address(this));
         require(amountOut >= amountOutMin, 'DeltaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).withdraw(amountOut);
-        TransferHelper.safeTransferETH(to, amountOut);
+        DSTransferHelper.safeTransferETH(to, amountOut);
     }
 
 }

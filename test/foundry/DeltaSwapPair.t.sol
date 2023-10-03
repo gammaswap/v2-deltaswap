@@ -80,7 +80,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
 
         sell_wbtc(addr1, 5*1e17 - 1);
 
@@ -88,7 +88,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertEq(liquidity, Math.sqrt(reserve0 * reserve1));
+        assertEq(liquidity, DSMath.sqrt(reserve0 * reserve1));
     }
 
     function testTradingFeesHalfPct() public {
@@ -97,7 +97,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
 
         sell_wbtc(addr1, 5*1e17);
 
@@ -105,7 +105,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
+        assertLt(liquidity, DSMath.sqrt(reserve0 * reserve1));
     }
 
     function testTradingFeesHalfPctPlus1() public {
@@ -114,7 +114,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
 
         sell_wbtc(addr1, 5*1e17 + 1);
 
@@ -122,7 +122,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
+        assertLt(liquidity, DSMath.sqrt(reserve0 * reserve1));
     }
 
     function testTradingFees1pct() public {
@@ -131,7 +131,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
 
         sell_wbtc(addr1, 1e18);
 
@@ -139,7 +139,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        uint256 liqDiff = Math.sqrt(reserve0 * reserve1) - liquidity;
+        uint256 liqDiff = DSMath.sqrt(reserve0 * reserve1) - liquidity;
         uint256 ret = liqDiff * 1e18 / liquidity;
         assertLt(2*4950531810910, ret);
     }
@@ -150,7 +150,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
 
         sell_wbtc(addr1, 2*1e18);
 
@@ -158,7 +158,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        uint256 liqDiff = Math.sqrt(reserve0 * reserve1) - liquidity;
+        uint256 liqDiff = DSMath.sqrt(reserve0 * reserve1) - liquidity;
         uint256 ret = liqDiff * 1e18 / liquidity;
         assertLt(3*19608419857370/2, ret);
     }
@@ -194,7 +194,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 liquidity = Math.sqrt(reserve0 * reserve1);
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
 
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
@@ -234,7 +234,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
-        assertLt(liquidity, Math.sqrt(reserve0 * reserve1));
+        assertLt(liquidity, DSMath.sqrt(reserve0 * reserve1));
     }
 
     function testTradeLiquidityEMA() public {
@@ -381,7 +381,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function calculateTradeLiquidity(uint256 amount) internal view returns(uint256) {
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
-        return Math.calcTradeLiquidity(amount, 0, reserve0, reserve1);
+        return DSMath.calcTradeLiquidity(amount, 0, reserve0, reserve1);
     }
 
     function testTradeLiquiditySum() public {
@@ -402,7 +402,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
 
-        uint256 tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        uint256 tradeLiq = DSMath.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
         sell_wbtc(addr1, 1*1e18);
 
         (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
@@ -420,7 +420,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(tradeBlockNum, 1);
 
         (reserve0, reserve1,) = dsPair.getReserves();
-        tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        tradeLiq = DSMath.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 1*1e18);
 
@@ -431,7 +431,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         prevTradeLiquiditySum = tradeLiquiditySum;
 
         (reserve0, reserve1,) = dsPair.getReserves();
-        tradeLiq = Math.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
+        tradeLiq = DSMath.calcTradeLiquidity(1*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 1*1e18);
 
@@ -450,7 +450,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(tradeLiquiditySum,2*1e18);
 
         (reserve0, reserve1,) = dsPair.getReserves();
-        tradeLiq = Math.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
+        tradeLiq = DSMath.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 2*1e18);
 
@@ -463,7 +463,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(tradeLiquiditySum,tradeLiq * 2);
 
         (reserve0, reserve1,) = dsPair.getReserves();
-        tradeLiq = Math.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
+        tradeLiq = DSMath.calcTradeLiquidity(2*1e18, 0, reserve0, reserve1);
 
         (tradeLiquiditySum, tradeBlockNum) = dsPair.getLastTradeLiquiditySum(0);
         prevTradeLiquiditySum = tradeLiquiditySum;
@@ -481,7 +481,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(tradeLiquiditySum,0);
 
         (reserve0, reserve1,) = dsPair.getReserves();
-        tradeLiq = Math.calcTradeLiquidity(3*1e18, 0, reserve0, reserve1);
+        tradeLiq = DSMath.calcTradeLiquidity(3*1e18, 0, reserve0, reserve1);
 
         sell_wbtc(addr1, 3*1e18);
 

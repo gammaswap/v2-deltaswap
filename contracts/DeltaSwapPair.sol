@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import './libraries/Math.sol';
+import './libraries/DSMath.sol';
 import './libraries/UQ112x112.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IDeltaSwapPair.sol';
@@ -83,7 +83,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
         }
         if(block.number != lastLiquidityBlockNumber) {
-            liquidityEMA = uint112(Math.calcEMA(Math.sqrt(balance0 * balance1), liquidityEMA, 10));
+            liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), liquidityEMA, DSMath.max(block.number - lastLiquidityBlockNumber, 10)));
             lastLiquidityBlockNumber = uint32(block.number);
         }
         reserve0 = uint112(balance0);
@@ -139,7 +139,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
         tradeLiquiditySum = _getLastTradeLiquiditySum(tradeLiquidity, blockDiff);
         lastTradeLiquidityEMA = _getLastTradeLiquidityEMA(blockDiff);
-        _tradeLiquidityEMA = tradeLiquidity > 0 ? Math.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
+        _tradeLiquidityEMA = tradeLiquidity > 0 ? DSMath.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
     }
 
     function getLastTradeLiquiditySum(uint256 tradeLiquidity) external virtual override view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum) {
@@ -176,8 +176,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         uint256 _kLast = kLast; // gas savings
         if (feeOn) {
             if (_kLast != 0) {
-                uint256 rootK = Math.sqrt(uint256(_reserve0) * _reserve1);
-                uint256 rootKLast = Math.sqrt(_kLast);
+                uint256 rootK = DSMath.sqrt(uint256(_reserve0) * _reserve1);
+                uint256 rootKLast = DSMath.sqrt(_kLast);
                 if (rootK > rootKLast) {
                     uint256 numerator = totalSupply * (rootK - rootKLast);
                     uint256 denominator = rootK * 5 + rootKLast;
@@ -201,10 +201,10 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
-            liquidity = Math.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
+            liquidity = DSMath.sqrt(amount0 * amount1) - MINIMUM_LIQUIDITY;
             _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
         } else {
-            liquidity = Math.min(amount0 * _totalSupply / _reserve0, amount1 * _totalSupply / _reserve1);
+            liquidity = DSMath.min(amount0 * _totalSupply / _reserve0, amount1 * _totalSupply / _reserve1);
         }
         require(liquidity > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
@@ -265,7 +265,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             if(msg.sender != gammaPool) {
                 fee = calcTradingFee(
                     _updateLiquidityTradedEMA(
-                        Math.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
+                        DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
                     ),
                     liquidityEMA);
             }

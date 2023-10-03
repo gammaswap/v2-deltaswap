@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import './libraries/TransferHelper.sol';
+import './libraries/DSTransferHelper.sol';
 import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './interfaces/IDeltaSwapRouter01.sol';
@@ -67,8 +67,8 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ) external virtual override ensure(deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
         address pair = DeltaSwapLibrary.pairFor(factory, tokenA, tokenB);
-        TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
-        TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
+        DSTransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
+        DSTransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
         liquidity = IDeltaSwapPair(pair).mint(to);
     }
     function addLiquidityETH(
@@ -88,11 +88,11 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
             amountETHMin
         );
         address pair = DeltaSwapLibrary.pairFor(factory, token, WETH);
-        TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
+        DSTransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
         liquidity = IDeltaSwapPair(pair).mint(to);
-        if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);// refund dust eth, if any
+        if (msg.value > amountETH) DSTransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);// refund dust eth, if any
     }
 
     // **** REMOVE LIQUIDITY ****
@@ -130,9 +130,9 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
             address(this),
             deadline
         );
-        TransferHelper.safeTransfer(token, to, amountToken);
+        DSTransferHelper.safeTransfer(token, to, amountToken);
         IWETH(WETH).withdraw(amountETH);
-        TransferHelper.safeTransferETH(to, amountETH);
+        DSTransferHelper.safeTransferETH(to, amountETH);
     }
     function removeLiquidityWithPermit(
         address tokenA,
@@ -185,7 +185,7 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         amounts = DeltaSwapLibrary.getAmountsOut(factory, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, to);
     }
     function swapTokensForExactTokens(
@@ -197,7 +197,7 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
         amounts = DeltaSwapLibrary.getAmountsIn(factory, amountOut, path);
         require(amounts[0] <= amountInMax, 'DeltaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, to);
     }
     function swapExactETHForTokens(uint256 amountOutMin, address[] calldata path, address to, uint256 deadline)
@@ -225,10 +225,10 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         require(path[path.length - 1] == WETH, 'DeltaSwapRouter: INVALID_PATH');
         amounts = DeltaSwapLibrary.getAmountsIn(factory, amountOut, path);
         require(amounts[0] <= amountInMax, 'DeltaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
-        TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
+        DSTransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
     function swapExactTokensForETH(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline)
     external
@@ -240,10 +240,10 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         require(path[path.length - 1] == WETH, 'DeltaSwapRouter: INVALID_PATH');
         amounts = DeltaSwapLibrary.getAmountsOut(factory, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
-        TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
+        DSTransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
     function swapETHForExactTokens(uint256 amountOut, address[] calldata path, address to, uint256 deadline)
     external
@@ -259,7 +259,7 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         IWETH(WETH).deposit{value: amounts[0]}();
         assert(IWETH(WETH).transfer(DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
-        if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);// refund dust eth, if any
+        if (msg.value > amounts[0]) DSTransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);// refund dust eth, if any
     }
 
     // **** LIBRARY FUNCTIONS ****

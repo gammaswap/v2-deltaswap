@@ -2,7 +2,7 @@
 pragma solidity >=0.5.0;
 
 import '../interfaces/IDeltaSwapPair.sol';
-import './Math.sol';
+import './DSMath.sol';
 
 library DeltaSwapLibrary {
 
@@ -20,7 +20,7 @@ library DeltaSwapLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'a19d1e9b1de0ee747812a5dee6275899c5664840b37e5b6f1f2f02e709e3b8ca' // init code hash
+                hex'07fa0e312f38a36aca0e12fd788f8f0ecffbf12c99590c6406cecb549a49e1ea' // init code hash
                 //hex'727acceca68d960ed5d50ba04d923982318b06ec39d13adf35ff6ec2a6756949' // init code hash
             )))));
     }
@@ -92,7 +92,7 @@ library DeltaSwapLibrary {
     }
 
     function calcPairTradingFee(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, address pair) internal view returns(uint256 fee) {
-        uint256 tradeLiquidity = Math.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
+        uint256 tradeLiquidity = DSMath.calcTradeLiquidity(amountIn, 0, reserveIn, reserveOut);
         fee = IDeltaSwapPair(pair).estimateTradingFee(tradeLiquidity);
     }
 
