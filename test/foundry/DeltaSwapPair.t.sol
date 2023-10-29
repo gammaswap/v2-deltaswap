@@ -163,6 +163,31 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertLt(3*19608419857370/2, ret);
     }
 
+    function testSetGammaPoolSetter() public {
+        assertEq(dsFactory.gammaPoolSetter(), owner);
+
+        dsFactory.setGammaPoolSetter(addr1);
+
+        assertEq(dsFactory.gammaPoolSetter(), addr1);
+
+        vm.startPrank(addr1);
+        dsFactory.setGammaPoolSetter(addr2);
+        assertEq(dsFactory.gammaPoolSetter(), addr2);
+        vm.stopPrank();
+    }
+
+    function testSetGammaPoolSetterRevert() public {
+        assertEq(dsFactory.gammaPoolSetter(), owner);
+
+        vm.startPrank(addr1);
+
+        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        dsFactory.setGammaPoolSetter(addr1);
+
+        assertEq(dsFactory.gammaPoolSetter(), owner);
+        vm.stopPrank();
+    }
+
     function testSetGammaPool() public {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
@@ -186,6 +211,22 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
         dsPair.setGammaPool(poolAddr);
+    }
+
+    function testSetGSFee() public {
+        assertEq(dsPair.gsFee(), 3);
+
+        vm.startPrank(address(dsFactory));
+        dsPair.setGSFee(5);
+        vm.stopPrank();
+
+        assertEq(dsPair.gsFee(), 5);
+    }
+
+    function testSetGSFeeFail() public {
+        assertEq(dsPair.gsFee(), 3);
+        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        dsPair.setGSFee(5);
     }
 
     function testTradingFeesGS() public {

@@ -8,12 +8,14 @@ import './DeltaSwapPair.sol';
 contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeTo;
     address public override feeToSetter;
+    address public override gammaPoolSetter;
 
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
 
-    constructor(address _feeToSetter) {
+    constructor(address _feeToSetter, address _gammaPoolSetter) {
         feeToSetter = _feeToSetter;
+        gammaPoolSetter = _gammaPoolSetter;
     }
 
     function allPairsLength() external override view returns (uint256) {
@@ -47,8 +49,13 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         feeToSetter = _feeToSetter;
     }
 
+    function setGammaPoolSetter(address _gammaPoolSetter) external override {
+        require(msg.sender == gammaPoolSetter, 'DeltaSwap: FORBIDDEN');
+        gammaPoolSetter = _gammaPoolSetter;
+    }
+
     function setGammaPool(address tokenA, address tokenB, address gsFactory, address implementation, uint16 protocolId) external override {
-        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        require(msg.sender == gammaPoolSetter, 'DeltaSwap: FORBIDDEN');
         address pair = getPair[tokenA][tokenB];
         address gammaPool = DeltaSwapLibrary.predictDeterministicAddress(implementation, keccak256(abi.encode(pair, protocolId)), gsFactory);
         IDeltaSwapPair(pair).setGammaPool(gammaPool);

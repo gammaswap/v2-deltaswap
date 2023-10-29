@@ -23,7 +23,7 @@ contract DeltaSwapSetup is Test {
         // Let's do the same thing with `getCode`
         //bytes memory args = abi.encode(arg1, arg2);
 
-        dsFactory = new DeltaSwapFactory(owner);
+        dsFactory = new DeltaSwapFactory(owner, owner);
         dsRouter = new DeltaSwapRouter02(address(dsFactory), weth);
 
         dsPair = DeltaSwapPair(createPair(address(usdc), address(wbtc)));
