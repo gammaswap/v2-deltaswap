@@ -14,7 +14,14 @@ contract DeltaSwapLibraryTest is Test {
         uint256 amount0 = isToken0 ? amount : 0;
         uint256 amount1 = !isToken0 ? amount : 0;
         uint256 tradeLiquidity = DSMath.calcTradeLiquidity(amount0, amount1, reserve0, reserve1);
-        assertEq(tradeLiquidity, DSMath.sqrt(uint256(amount)*amount));
+        if(amount0 > 0) {
+            amount0 = amount0 / 2;
+            amount1 = amount0 * reserve1 / reserve0;
+        } else if(amount1 > 0){
+            amount1 = amount1 / 2;
+            amount0 = amount1 * reserve0 / reserve1;
+        }
+        assertEq(tradeLiquidity, DSMath.sqrt(uint256(amount0)*amount1));
         assertEq(DSMath.calcTradeLiquidity(0, 0, reserve0, reserve1), 0);
     }
 

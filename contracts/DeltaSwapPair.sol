@@ -21,6 +21,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
     address public override gammaPool;
     uint8 public override gsFee = 3; // GammaPool swap fee
+    uint8 public override dsFee = 3; // Fee on large trades
+    uint8 public override dsFeeThreshold = 20; // >2% of Liq trades pay fee
 
     uint112 private liquidityEMA;
     uint32 private lastLiquidityBlockNumber;
@@ -79,6 +81,16 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         gsFee = fee;
     }
 
+    function setDSFee(uint8 fee) external override {
+        require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
+        dsFee = fee;
+    }
+
+    function setDSFeeThreshold(uint8 feeThreshold) external {
+        require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
+        dsFeeThreshold = feeThreshold;
+    }
+
     // update reserves and, on the first call per block, price accumulators
     function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
         require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'DeltaSwap: OVERFLOW');
@@ -119,14 +131,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
-        if(lastLiquidityTradedEMA >= lastLiquidityEMA * 5 / 1000) { // if trade >= 0.5% of liquidity, charge 0.1% fee => 0.25% of liquidity value, ~1% px change and 0.8 % slippage
-            if(lastLiquidityTradedEMA >= lastLiquidityEMA * 10 / 1000) { // if trade >= 1% of liquidity, charge 0.2% fee => 0.5% of liquidity value, ~2.01% px change and 1.3% slippage
-                if(lastLiquidityTradedEMA >= lastLiquidityEMA * 20 / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
-                    return 3;
-                }
-                return 2;
-            }
-            return 1;
+        if(lastLiquidityTradedEMA >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
+            return dsFee;
         }
         return 0;
     }

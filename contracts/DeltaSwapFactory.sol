@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.19;
 
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
+
 import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './DeltaSwapPair.sol';
 
-contract DeltaSwapFactory is IDeltaSwapFactory {
+contract DeltaSwapFactory is IDeltaSwapFactory, Ownable2Step {
     address public override feeTo;
     address public override feeToSetter;
     address public override gammaPoolSetter;
@@ -47,6 +49,21 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
     function setFeeToSetter(address _feeToSetter) external override {
         require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
         feeToSetter = _feeToSetter;
+    }
+
+    function setGSFee(address tokenA, address tokenB, uint8 fee) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        IDeltaSwapPair(getPair[tokenA][tokenB]).setGSFee(fee);
+    }
+
+    function setDSFee(address tokenA, address tokenB, uint8 fee) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        IDeltaSwapPair(getPair[tokenA][tokenB]).setDSFee(fee);
+    }
+
+    function setDSFeeThreshold(address tokenA, address tokenB, uint8 feeThreshold) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        IDeltaSwapPair(getPair[tokenA][tokenB]).setDSFeeThreshold(feeThreshold);
     }
 
     function setGammaPoolSetter(address _gammaPoolSetter) external override {

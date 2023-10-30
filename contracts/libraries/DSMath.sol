@@ -43,7 +43,9 @@ library DSMath {
     }
 
     function calcSingleSideLiquidity(uint256 amount, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {
-        return DSMath.sqrt(amount * (amount * reserve1 / reserve0));//sqrt(A*P*A) = L
+        uint256 amount0 = amount / 2;
+        uint256 amount1 = amount0 * reserve1 / reserve0;
+        return DSMath.sqrt(amount0 * amount1);
     }
 
     function calcTradeLiquidity(uint256 amount0, uint256 amount1, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {

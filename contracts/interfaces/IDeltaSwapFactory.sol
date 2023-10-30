@@ -17,6 +17,11 @@ interface IDeltaSwapFactory {
 
     function setFeeTo(address) external;
     function setFeeToSetter(address) external;
+
+    function setGSFee(address tokenA, address tokenB, uint8 fee) external;
+    function setDSFee(address tokenA, address tokenB, uint8 fee) external;
+    function setDSFeeThreshold(address tokenA, address tokenB, uint8 feeThreshold) external;
+
     function setGammaPoolSetter(address) external;
     function setGammaPool(address tokenA, address tokenB, address gsFactory, address implementation, uint16 protocolId) external;
 }
