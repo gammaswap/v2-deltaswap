@@ -63,8 +63,8 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testCalcTradingFee(uint256 lastLiquidityTradedEMA, uint128 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(lastLiquidityTradedEMA, lastLiquidityEMA);
-        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * dsPair.dsFeeThreshold() / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
-            assertEq(fee,dsPair.dsFee());
+        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
+            assertEq(fee,dsFactory.dsFee());
         } else {
             assertEq(fee,0);
         }
@@ -140,11 +140,11 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testTradingFeesThreshold() public {
-        vm.prank(address(dsFactory));
-        dsPair.setDSFeeThreshold(21);
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setDSFeeThreshold(21);
         vm.stopPrank();
 
-        assertEq(dsPair.dsFeeThreshold(), 21);
+        assertEq(dsFactory.dsFeeThreshold(), 21);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -163,11 +163,11 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testTradingDSFees() public {
-        vm.prank(address(dsFactory));
-        dsPair.setDSFee(100); // fee is 10%
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setDSFee(100); // fee is 10%
         vm.stopPrank();
 
-        assertEq(dsPair.dsFee(), 100);
+        assertEq(dsFactory.dsFee(), 100);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -193,33 +193,37 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testDSFeesThresholdForbidden() public {
-        uint8 dsFeeThreshold = dsPair.dsFeeThreshold();
+        uint8 dsFeeThreshold = dsFactory.dsFeeThreshold();
         assertNotEq(dsFeeThreshold, 21);
 
+        vm.prank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsPair.setDSFeeThreshold(21);
+        dsFactory.setDSFeeThreshold(21);
+        vm.stopPrank();
 
-        assertEq(dsPair.dsFeeThreshold(), dsFeeThreshold);
+        assertEq(dsFactory.dsFeeThreshold(), dsFeeThreshold);
     }
 
     function testDSFees() public {
-        assertEq(dsPair.dsFee(), 3);
+        assertEq(dsFactory.dsFee(), 3);
 
-        vm.prank(address(dsFactory));
-        dsPair.setDSFee(50);
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setDSFee(50);
         vm.stopPrank();
 
-        assertEq(dsPair.dsFee(), 50);
+        assertEq(dsFactory.dsFee(), 50);
     }
 
     function testDSFeesForbidden() public {
-        uint8 dsFee = dsPair.dsFee();
+        uint8 dsFee = dsFactory.dsFee();
         assertNotEq(dsFee, 50);
 
+        vm.prank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsPair.setDSFee(50);
+        dsFactory.setDSFee(50);
+        vm.stopPrank();
 
-        assertEq(dsPair.dsFee(), dsFee);
+        assertEq(dsFactory.dsFee(), dsFee);
     }
 
     function testSetGammaPoolSetter() public {
@@ -262,7 +266,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsPair.gammaPool(), poolAddr);
     }
 
-    function testSetGammaPoolFail() public {
+    function testSetGammaPoolError() public {
         address gsFactory = vm.addr(100);
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
@@ -273,19 +277,25 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testSetGSFee() public {
-        assertEq(dsPair.gsFee(), 3);
+        assertEq(dsFactory.gsFee(), 3);
 
-        vm.startPrank(address(dsFactory));
-        dsPair.setGSFee(5);
+        vm.startPrank(address(dsFactory.feeToSetter()));
+        dsFactory.setGSFee(5);
         vm.stopPrank();
 
-        assertEq(dsPair.gsFee(), 5);
+        assertEq(dsFactory.gsFee(), 5);
     }
 
-    function testSetGSFeeFail() public {
-        assertEq(dsPair.gsFee(), 3);
+    function testSetGSFeeError() public {
+        uint256 gsFee = dsFactory.gsFee();
+        assertNotEq(gsFee, 5);
+
+        vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsPair.setGSFee(5);
+        dsFactory.setGSFee(5);
+        vm.stopPrank();
+
+        assertEq(dsFactory.gsFee(), gsFee);
     }
 
     function testTradingFeesGS() public {
