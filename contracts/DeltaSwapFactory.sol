@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.19;
 
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
-
 import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './DeltaSwapPair.sol';
 
-contract DeltaSwapFactory is IDeltaSwapFactory, Ownable2Step {
+contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeTo;
     address public override feeToSetter;
     address public override gammaPoolSetter;
