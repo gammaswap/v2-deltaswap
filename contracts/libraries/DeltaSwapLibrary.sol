@@ -20,8 +20,8 @@ library DeltaSwapLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                //hex'c5248d045daf83004e90f63407ad1bc007b5867e1efe4c1e333d5c7ea91007c8' // init code hash
-                hex'69b98b06bb9badd011c3197dc660b7fe3d90b8979aefdf7dd1f1271307337376' // init code hash
+                hex'5f7f042c1cabd8c80e5014a857c26cbc62df1e0ae3134f4c9b53f4005e412526' // init code hash
+                //hex'69b98b06bb9badd011c3197dc660b7fe3d90b8979aefdf7dd1f1271307337376' // init code hash
             )))));
     }
 

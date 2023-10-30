@@ -48,7 +48,7 @@ let ERC20: any;
 
 export async function factoryFixture(wallet: any): Promise<FactoryFixture> {
     DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
-    const factory = await DeltaSwapFactory.deploy(wallet.address, overrides);
+    const factory = await DeltaSwapFactory.deploy(wallet.address, wallet.address, overrides);
     return { factory }
 }
 
@@ -92,7 +92,7 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
 
     // deploy V2
     DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
-    const factoryV2 = await DeltaSwapFactory.deploy(wallet.address, overrides);
+    const factoryV2 = await DeltaSwapFactory.deploy(wallet.address, wallet.address, overrides);
 
     // deploy routers
     DeltaSwapRouter01 = await ethers.getContractFactory("DeltaSwapRouter01");
