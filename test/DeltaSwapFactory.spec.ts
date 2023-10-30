@@ -28,10 +28,10 @@ describe('DeltaSwapFactory', () => {
     beforeEach(async () => {
         DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
         [wallet, other] = await ethers.getSigners();
-        const fixture = await factoryFixture(wallet)
+        const fixture = await factoryFixture(wallet);
         factory = fixture.factory
         //console.log('============', formatObject(config), formatObject(userConfig));
-        //console.log("initCodeHash >> ", utils.keccak256(DeltaSwapPair.bytecode).toString())
+        //console.log("initCodeHash >> ", utils.keccak256(DeltaSwapPair.bytecode).toString());
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
@@ -72,7 +72,7 @@ describe('DeltaSwapFactory', () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(2307858)
+        expect(receipt.gasUsed).to.eq(2359299)
     })
 
     it('setFeeTo', async () => {

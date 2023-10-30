@@ -141,6 +141,7 @@ coverage.json
 typechain
 typechain-types
 cache_forge
+.gas-snapshot
 
 # Hardhat files
 cache
