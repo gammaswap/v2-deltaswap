@@ -10,6 +10,10 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeToSetter;
     address public override gammaPoolSetter;
 
+    uint8 public override gsFee = 3; // GammaPool swap fee
+    uint8 public override dsFee = 3; // Fee on large trades
+    uint8 public override dsFeeThreshold = 20; // >2% of Liq trades pay fee
+
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
 
@@ -47,6 +51,25 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
     function setFeeToSetter(address _feeToSetter) external override {
         require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
         feeToSetter = _feeToSetter;
+    }
+
+    function setGSFee(uint8 fee) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        gsFee = fee;
+    }
+
+    function setDSFee(uint8 fee) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        dsFee = fee;
+    }
+
+    function setDSFeeThreshold(uint8 feeThreshold) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        dsFeeThreshold = feeThreshold;
+    }
+
+    function dsFeeInfo() external override view returns (uint8,uint8) {
+        return(dsFee, dsFeeThreshold);
     }
 
     function setGammaPoolSetter(address _gammaPoolSetter) external override {

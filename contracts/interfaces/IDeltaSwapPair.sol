@@ -34,8 +34,6 @@ interface IDeltaSwapPair is IDeltaSwapERC20 {
 
     function initialize(address, address) external;
 
-    function gsFee() external view returns (uint8);
-    function setGSFee(uint8 fee) external;
     function gammaPool() external view returns (address);
     function setGammaPool(address gammaPool) external;
 

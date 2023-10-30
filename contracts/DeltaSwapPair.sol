@@ -20,7 +20,6 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     address public override token1;
 
     address public override gammaPool;
-    uint8 public override gsFee = 3; // GammaPool swap fee
 
     uint112 private liquidityEMA;
     uint32 private lastLiquidityBlockNumber;
@@ -73,12 +72,6 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         gammaPool = pool;
     }
 
-    // called by the factory after deployment
-    function setGSFee(uint8 fee) external override {
-        require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
-        gsFee = fee;
-    }
-
     // update reserves and, on the first call per block, price accumulators
     function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
         require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'DeltaSwap: OVERFLOW');
@@ -119,14 +112,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
-        if(lastLiquidityTradedEMA >= lastLiquidityEMA * 5 / 1000) { // if trade >= 0.5% of liquidity, charge 0.1% fee => 0.25% of liquidity value, ~1% px change and 0.8 % slippage
-            if(lastLiquidityTradedEMA >= lastLiquidityEMA * 10 / 1000) { // if trade >= 1% of liquidity, charge 0.2% fee => 0.5% of liquidity value, ~2.01% px change and 1.3% slippage
-                if(lastLiquidityTradedEMA >= lastLiquidityEMA * 20 / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
-                    return 3;
-                }
-                return 2;
-            }
-            return 1;
+        (uint8 dsFee, uint8 dsFeeThreshold) = IDeltaSwapFactory(factory).dsFeeInfo();
+        if(lastLiquidityTradedEMA >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
+            return dsFee;
         }
         return 0;
     }
@@ -268,13 +256,15 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, 'DeltaSwap: INSUFFICIENT_INPUT_AMOUNT');
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
-            uint256 fee = gsFee; // saves gas
+            uint256 fee;
             if(msg.sender != gammaPool) {
                 fee = calcTradingFee(
                     _updateLiquidityTradedEMA(
                         DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
                     ),
                     liquidityEMA);
+            } else {
+                fee = IDeltaSwapFactory(factory).gsFee();
             }
             uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;
             uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;
