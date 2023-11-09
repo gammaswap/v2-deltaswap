@@ -42,5 +42,5 @@ interface IDeltaSwapPair is IDeltaSwapERC20 {
     function getTradeLiquidityEMA(uint256 tradeLiquidity) external view returns(uint256 tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum);
     function getLastTradeLiquiditySum(uint256 tradeLiquidity) external view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum);
     function estimateTradingFee(uint256 tradeLiquidity) external view returns(uint256 fee);
-    function calcTradingFee(uint256 tradeLiquidityEMA, uint256 liquidityEMA) external view returns(uint256 fee);
+    function calcTradingFee(uint256 tradeLiquidity, uint256 tradeLiquidityEMA, uint256 liquidityEMA) external view returns(uint256 fee);
 }

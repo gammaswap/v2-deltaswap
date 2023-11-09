@@ -108,12 +108,12 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     function estimateTradingFee(uint256 tradeLiquidity) external virtual override view returns(uint256 fee) {
         uint256 blockDiff = block.number - lastTradeBlockNumber;
         (uint256 _tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
-        fee = calcTradingFee(_tradeLiquidityEMA, liquidityEMA);
+        fee = calcTradingFee(tradeLiquidity, _tradeLiquidityEMA, liquidityEMA);
     }
 
-    function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
+    function calcTradingFee(uint256 tradeLiquidity, uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
         (uint8 dsFee, uint8 dsFeeThreshold) = IDeltaSwapFactory(factory).dsFeeInfo();
-        if(lastLiquidityTradedEMA >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
+        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
             return dsFee;
         }
         return 0;
@@ -258,11 +258,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint256 fee;
             if(msg.sender != gammaPool) {
-                fee = calcTradingFee(
-                    _updateLiquidityTradedEMA(
-                        DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
-                    ),
-                    liquidityEMA);
+                uint256 tradeLiquidity = DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1);
+                fee = calcTradingFee(tradeLiquidity, _updateLiquidityTradedEMA(tradeLiquidity), liquidityEMA);
             } else {
                 fee = IDeltaSwapFactory(factory).gsFee();
             }

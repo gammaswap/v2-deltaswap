@@ -49,11 +49,8 @@ library DSMath {
     }
 
     function calcTradeLiquidity(uint256 amount0, uint256 amount1, uint256 reserve0, uint256 reserve1) internal pure returns(uint256) {
-        if(amount0 > 0) {
-            return calcSingleSideLiquidity(amount0, reserve0, reserve1);
-        } else if(amount1 > 0) {
-            return calcSingleSideLiquidity(amount1, reserve1, reserve0);
-        }
-        return 0;
+        return max(
+            calcSingleSideLiquidity(amount0, reserve0, reserve1),
+                calcSingleSideLiquidity(amount1, reserve1, reserve0));
     }
 }
