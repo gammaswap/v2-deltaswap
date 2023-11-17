@@ -61,9 +61,9 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         vm.stopPrank();
     }
 
-    function testCalcTradingFee(uint256 lastLiquidityTradedEMA, uint128 lastLiquidityEMA) public {
-        uint256 fee = dsPair.calcTradingFee(lastLiquidityTradedEMA, lastLiquidityEMA);
-        if(lastLiquidityTradedEMA >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
+    function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
+        uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
+        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
             assertEq(fee,dsFactory.dsFee());
         } else {
             assertEq(fee,0);

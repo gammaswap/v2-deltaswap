@@ -371,8 +371,8 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 179148,
-                            [RouterVersion.DeltaSwapRouter02]: 179249
+                            [RouterVersion.DeltaSwapRouter01]: 180218,
+                            [RouterVersion.DeltaSwapRouter02]: 180319
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
@@ -520,8 +520,8 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 182802,
-                            [RouterVersion.DeltaSwapRouter02]: 182824
+                            [RouterVersion.DeltaSwapRouter01]: 183865,
+                            [RouterVersion.DeltaSwapRouter02]: 183887
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)

@@ -24,9 +24,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     uint112 private liquidityEMA;
     uint32 private lastLiquidityBlockNumber;
 
-    uint112 private tradeLiquidityEMA;
-    uint112 private lastTradeLiquiditySum;
-    uint32 private lastTradeBlockNumber;
+    uint112 private tradeLiquidityEMA;     // uses single storage slot
+    uint112 private lastTradeLiquiditySum; // uses single storage slot
+    uint32 private lastTradeBlockNumber;   // uses single storage slot
 
     uint112 private reserve0;           // uses single storage slot, accessible via getReserves
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
@@ -82,8 +82,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             price0CumulativeLast += uint256(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
             price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
         }
-        if(block.number != lastLiquidityBlockNumber) {
-            liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), liquidityEMA, DSMath.max(block.number - lastLiquidityBlockNumber, 10)));
+        (uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) = getLiquidityEMA(); // saves gas
+        if(block.number != _lastLiquidityBlockNumber) {
+            liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), _liquidityEMA, DSMath.max(block.number - _lastLiquidityBlockNumber, 10)));
             lastLiquidityBlockNumber = uint32(block.number);
         }
         reserve0 = uint112(balance0);
@@ -94,58 +95,60 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
     function _updateLiquidityTradedEMA(uint256 tradeLiquidity) internal virtual returns(uint256 _tradeLiquidityEMA) {
         require(tradeLiquidity > 0, "DeltaSwap: ZERO_TRADE_LIQUIDITY");
-        uint32 blockNum = uint32(block.number);
-        uint256 blockDiff = blockNum - lastTradeBlockNumber;
+        uint256 blockNum = block.number;
         uint256 tradeLiquiditySum;
-        (_tradeLiquidityEMA,,tradeLiquiditySum) = _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
+        (_tradeLiquidityEMA,,tradeLiquiditySum) = _getTradeLiquidityEMA(tradeLiquidity, blockNum);
         lastTradeLiquiditySum = uint112(tradeLiquiditySum);
         tradeLiquidityEMA = uint112(_tradeLiquidityEMA);
         if(lastTradeBlockNumber != blockNum) {
-            lastTradeBlockNumber = blockNum;
+            lastTradeBlockNumber = uint32(blockNum);
         }
     }
 
     function estimateTradingFee(uint256 tradeLiquidity) external virtual override view returns(uint256 fee) {
-        uint256 blockDiff = block.number - lastTradeBlockNumber;
-        (uint256 _tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
-        fee = calcTradingFee(_tradeLiquidityEMA, liquidityEMA);
+        (uint256 _tradeLiquidityEMA,,) = _getTradeLiquidityEMA(tradeLiquidity, block.number);
+        fee = calcTradingFee(tradeLiquidity, _tradeLiquidityEMA, liquidityEMA);
     }
 
-    function calcTradingFee(uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
+    function calcTradingFee(uint256 tradeLiquidity, uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
         (uint8 dsFee, uint8 dsFeeThreshold) = IDeltaSwapFactory(factory).dsFeeInfo();
-        if(lastLiquidityTradedEMA >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
+        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
             return dsFee;
         }
         return 0;
     }
 
-    function getLiquidityEMA() external virtual override view returns(uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) {
+    function getLiquidityEMA() public virtual override view returns(uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) {
         _liquidityEMA = liquidityEMA;
         _lastLiquidityBlockNumber = lastLiquidityBlockNumber;
     }
 
-    function getTradeLiquidityEMA(uint256 tradeLiquidity) external virtual override view
-        returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
-        uint256 blockDiff = block.number - lastTradeBlockNumber;
-        return _getTradeLiquidityEMA(tradeLiquidity, blockDiff);
+    function getTradeLiquidityEMAParams() external virtual override view returns(uint112 _tradeLiquidityEMA, uint112 _lastTradeLiquiditySum, uint32 _lastTradeBlockNumber) {
+        _tradeLiquidityEMA = tradeLiquidityEMA;
+        _lastTradeLiquiditySum = lastTradeLiquiditySum;
+        _lastTradeBlockNumber = lastTradeBlockNumber;
     }
 
-    function _getTradeLiquidityEMA(uint256 tradeLiquidity, uint256 blockDiff) internal virtual view
+    function getTradeLiquidityEMA(uint256 tradeLiquidity) external virtual override view
         returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
+        return _getTradeLiquidityEMA(tradeLiquidity, block.number);
+    }
+
+    function _getTradeLiquidityEMA(uint256 tradeLiquidity, uint256 blockNumber) internal virtual view
+        returns(uint256 _tradeLiquidityEMA, uint256 lastTradeLiquidityEMA, uint256 tradeLiquiditySum) {
+        uint256 blockDiff = blockNumber - lastTradeBlockNumber;
         tradeLiquiditySum = _getLastTradeLiquiditySum(tradeLiquidity, blockDiff);
         lastTradeLiquidityEMA = _getLastTradeLiquidityEMA(blockDiff);
         _tradeLiquidityEMA = tradeLiquidity > 0 ? DSMath.calcEMA(tradeLiquiditySum, lastTradeLiquidityEMA, 20) : lastTradeLiquidityEMA;
     }
 
-    function getLastTradeLiquiditySum(uint256 tradeLiquidity) external virtual override view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNum) {
-        uint256 blockDiff = block.number - lastTradeBlockNumber;
-        _tradeLiquiditySum = uint112(_getLastTradeLiquiditySum(tradeLiquidity, blockDiff));
-        _lastTradeBlockNum = lastTradeBlockNumber;
+    function getLastTradeLiquiditySum(uint256 tradeLiquidity) external virtual override view returns(uint112 _tradeLiquiditySum, uint32 _lastTradeBlockNumber) {
+        _lastTradeBlockNumber = lastTradeBlockNumber;
+        _tradeLiquiditySum = uint112(_getLastTradeLiquiditySum(tradeLiquidity, block.number - _lastTradeBlockNumber));
     }
 
     function getLastTradeLiquidityEMA() external virtual override view returns(uint256) {
-        uint256 blockDiff = block.number - lastTradeBlockNumber;
-        return _getLastTradeLiquidityEMA(blockDiff);
+        return _getLastTradeLiquidityEMA(block.number - lastLiquidityBlockNumber);
     }
 
     function _getLastTradeLiquiditySum(uint256 tradeLiquidity, uint256 blockDiff) internal virtual view returns(uint256) {
@@ -258,11 +261,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
             uint256 fee;
             if(msg.sender != gammaPool) {
-                fee = calcTradingFee(
-                    _updateLiquidityTradedEMA(
-                        DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1)
-                    ),
-                    liquidityEMA);
+                uint256 tradeLiquidity = DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1);
+                fee = calcTradingFee(tradeLiquidity, _updateLiquidityTradedEMA(tradeLiquidity), liquidityEMA);
             } else {
                 fee = IDeltaSwapFactory(factory).gsFee();
             }
