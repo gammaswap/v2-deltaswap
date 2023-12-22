@@ -162,6 +162,36 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(liquidity, DSMath.sqrt(reserve0 * reserve1));
     }
 
+    // TODO: Review why this is not working as expected. Liquidity in old totSupply shouldn't have incrased
+    // Maybe the difference is a rounding error?
+    function testProtRevenueShare100Pct() public {
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(0); // feeNum = 0 => fee share is 100%
+        vm.stopPrank();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 0);
+        sell_wbtc(addr1, 8*1e18);
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertEq(liquidity1 * totSupply / totSupply1, liquidity);
+        //assertEq(liquidity * totSupply1, liquidity1 * totSupply);
+    }
+
     function testTradingDSFees() public {
         vm.prank(address(dsFactory.feeToSetter()));
         dsFactory.setDSFee(100); // fee is 10%
