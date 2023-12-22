@@ -36,6 +36,7 @@ describe('DeltaSwapFactory', () => {
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
         expect(await factory.feeTo()).to.eq(constants.AddressZero)
+        expect(await factory.feeNum()).to.eq(5000)
         expect(await factory.feeToSetter()).to.eq(wallet.address)
         expect(await factory.allPairsLength()).to.eq(0)
     })
@@ -79,6 +80,12 @@ describe('DeltaSwapFactory', () => {
         await expect(factory.connect(other).setFeeTo(other.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
         await factory.setFeeTo(wallet.address)
         expect(await factory.feeTo()).to.eq(wallet.address)
+    })
+
+    it('setFeeNum', async () => {
+        await expect(factory.connect(other).setFeeNum(1000)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await factory.setFeeNum(1000)
+        expect(await factory.feeNum()).to.eq(1000)
     })
 
     it('setFeeToSetter', async () => {
