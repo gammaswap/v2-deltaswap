@@ -169,7 +169,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
-        address feeTo = IDeltaSwapFactory(factory).feeTo();
+        (address feeTo, uint256 feeNum) = IDeltaSwapFactory(factory).feeInfo();
         feeOn = feeTo != address(0);
         uint256 _kLast = kLast; // gas savings
         if (feeOn) {
@@ -178,7 +178,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
                 uint256 rootKLast = DSMath.sqrt(_kLast);
                 if (rootK > rootKLast) {
                     uint256 numerator = totalSupply * (rootK - rootKLast);
-                    uint256 denominator = rootK * 5 + rootKLast;
+                    uint256 denominator = rootK * feeNum / 1000 + rootKLast;
                     uint256 liquidity = numerator / denominator;
                     if (liquidity > 0) _mint(feeTo, liquidity);
                 }

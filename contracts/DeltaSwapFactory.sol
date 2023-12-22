@@ -7,6 +7,7 @@ import './DeltaSwapPair.sol';
 
 contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeTo;
+    uint16 public override feeNum = 5000; // GammaPool swap fee
     address public override feeToSetter;
     address public override gammaPoolSetter;
 
@@ -43,6 +44,11 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         emit PairCreated(token0, token1, pair, allPairs.length);
     }
 
+    function setFeeNum(uint16 _feeNum) external override {
+        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
+        feeNum = _feeNum;
+    }
+
     function setFeeTo(address _feeTo) external override {
         require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
         feeTo = _feeTo;
@@ -66,6 +72,10 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
     function setDSFeeThreshold(uint8 feeThreshold) external override {
         require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
         dsFeeThreshold = feeThreshold;
+    }
+
+    function feeInfo() external override view returns (address,uint16) {
+        return(feeTo, feeNum);
     }
 
     function dsFeeInfo() external override view returns (uint8,uint8) {
