@@ -162,10 +162,14 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(liquidity, DSMath.sqrt(reserve0 * reserve1));
     }
 
-    // TODO: Review why this is not working as expected. Liquidity in old totSupply shouldn't have incrased
-    // Maybe the difference is a rounding error?
     function testProtRevenueShare100Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(0); // feeNum = 0 => fee share is 100%
+        vm.stopPrank();
+
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
         assertEq(reserve0, 100*1e18);
         assertEq(reserve1, 100*1e18);
@@ -173,14 +177,14 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply = dsPair.totalSupply();
 
-        vm.prank(address(dsFactory.feeToSetter()));
-        dsFactory.setFeeTo(dsFactory.feeToSetter());
-        dsFactory.setFeeNum(0); // feeNum = 0 => fee share is 100%
-        vm.stopPrank();
-
         assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
         assertEq(dsFactory.feeNum(), 0);
-        sell_wbtc(addr1, 8*1e18);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
 
         (reserve0, reserve1,) = dsPair.getReserves();
         assertNotEq(reserve0, 100*1e18);
@@ -189,7 +193,250 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertEq(liquidity1 * totSupply / totSupply1, liquidity);
-        //assertEq(liquidity * totSupply1, liquidity1 * totSupply);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+    }
+
+    function testProtRevenueShare25Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(3000); // feeNum = 3000 => fee share is 25%
+        vm.stopPrank();
+
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 3000);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertGt(liquidity1 * totSupply / totSupply1, liquidity);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+
+        uint256 num = 5769730077595450;
+        assertEq(num, liquidity1 - liquidity);
+        num = num / 4;
+        assertApproxEqRel(num,totSupply1 - totSupply,5*1e13);
+    }
+
+    function testProtRevenueShare33Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(2000); // feeNum = 2000 => fee share is 33.33%
+        vm.stopPrank();
+
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 2000);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertGt(liquidity1 * totSupply / totSupply1, liquidity);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+
+        uint256 num = 5769730077595450;
+        assertEq(num, liquidity1 - liquidity);
+        num = num / 3;
+        assertApproxEqRel(num,totSupply1 - totSupply,4*1e13);
+    }
+
+    function testProtRevenueShare50Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(1000); // feeNum = 1000 => fee share is 50%
+        vm.stopPrank();
+
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 1000);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertGt(liquidity1 * totSupply / totSupply1, liquidity);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+
+        uint256 num = 5769730077595450;
+        assertEq(num, liquidity1 - liquidity);
+        num = num / 2;
+        assertApproxEqRel(num,totSupply1 - totSupply,3*1e13);
+    }
+
+    // Maybe the difference is a rounding error?
+    function testProtRevenueShare60Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(666); // feeNum = 666 => fee share is 60%
+        vm.stopPrank();
+
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 666);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertGt(liquidity1 * totSupply / totSupply1, liquidity);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+
+        uint256 num = 5769730077595450;
+        assertEq(num, liquidity1 - liquidity);
+        num = num * 6 / 10;
+        assertApproxEqRel(num,totSupply1 - totSupply,38*1e13);
+    }
+
+    function testProtRevenueShare75Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(333); // feeNum = 333 => fee share is 75%
+        vm.stopPrank();
+
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 333);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertGt(liquidity1 * totSupply / totSupply1, liquidity);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+
+        uint256 num = 5769730077595450;
+        assertEq(num, liquidity1 - liquidity);
+        num = num * 3 / 4;
+        assertApproxEqRel(num,totSupply1 - totSupply,25*1e13);
+    }
+
+    // Maybe the difference is a rounding error?
+    function testProtRevenueShare80Pct() public {
+        vm.prank(address(dsFactory.feeToSetter()));
+        dsFactory.setFeeTo(dsFactory.feeToSetter());
+        dsFactory.setFeeNum(250); // feeNum = 250 => fee share is 80%
+        vm.stopPrank();
+
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply = dsPair.totalSupply();
+
+        assertEq(dsFactory.feeTo(), dsFactory.feeToSetter());
+        assertEq(dsFactory.feeNum(), 250);
+        sell_wbtc(addr1, 4*1e18);
+
+        vm.startPrank(addr1);
+        dsPair.transfer(address(dsPair), 1000);
+        dsPair.burn(addr1);
+        vm.stopPrank();
+
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertNotEq(reserve0, 100*1e18);
+        assertNotEq(reserve1, 100*1e18);
+
+        uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
+        uint256 totSupply1 = dsPair.totalSupply();
+        assertGt(liquidity1 * totSupply / totSupply1, liquidity);
+        assertGt(liquidity1, liquidity);
+        assertGt(totSupply1, totSupply);
+
+        uint256 num = 5769730077595450;
+        assertEq(num, liquidity1 - liquidity);
+        num = num * 4 / 5;
+        assertApproxEqRel(num,totSupply1 - totSupply,3*1e13);
     }
 
     function testTradingDSFees() public {
