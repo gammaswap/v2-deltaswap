@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
+import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
+
 import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './DeltaSwapPair.sol';
@@ -10,6 +12,7 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
     uint16 public override feeNum = 5000; // GammaPool swap fee
     address public override feeToSetter;
     address public override gammaPoolSetter;
+    address public override gsFactory;
 
     uint8 public override gsFee = 3; // GammaPool swap fee
     uint8 public override dsFee = 3; // Fee on large trades
@@ -18,9 +21,12 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
 
-    constructor(address _feeToSetter, address _gammaPoolSetter) {
+    uint16 public override gsProtocolId = 3;
+
+    constructor(address _feeToSetter, address _gammaPoolSetter, address _gsFactory) {
         feeToSetter = _feeToSetter;
         gammaPoolSetter = _gammaPoolSetter;
+        gsFactory = _gsFactory;
     }
 
     function allPairsLength() external override view returns (uint256) {
@@ -42,6 +48,8 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         getPair[token1][token0] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
         emit PairCreated(token0, token1, pair, allPairs.length);
+
+        _setGammaPool(pair);
     }
 
     function setFeeNum(uint16 _feeNum) external override {
@@ -82,16 +90,29 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         return(dsFee, dsFeeThreshold);
     }
 
+    function setGSProtocolId(uint16 protocolId) external override {
+        require(msg.sender == gammaPoolSetter, 'DeltaSwap: FORBIDDEN');
+        gsProtocolId = protocolId;
+    }
+
+    function setGSFactory(address factory) external override {
+        require(msg.sender == gammaPoolSetter, 'DeltaSwap: FORBIDDEN');
+        gsFactory = factory;
+    }
+
     function setGammaPoolSetter(address _gammaPoolSetter) external override {
         require(msg.sender == gammaPoolSetter, 'DeltaSwap: FORBIDDEN');
         gammaPoolSetter = _gammaPoolSetter;
     }
 
-    function setGammaPool(address tokenA, address tokenB, address gsFactory, address implementation, uint16 protocolId) external override {
+    function updateGammaPool(address tokenA, address tokenB) external override {
         require(msg.sender == gammaPoolSetter, 'DeltaSwap: FORBIDDEN');
-        address pair = getPair[tokenA][tokenB];
-        address gammaPool = DeltaSwapLibrary.predictDeterministicAddress(implementation, keccak256(abi.encode(pair, protocolId)), gsFactory);
+        _setGammaPool(getPair[tokenA][tokenB]);
+    }
+
+    function _setGammaPool(address pair) internal {
+        address gammaPool = AddressCalculator.calcAddress(gsFactory, gsProtocolId, keccak256(abi.encode(pair, gsProtocolId)));
         IDeltaSwapPair(pair).setGammaPool(gammaPool);
-        emit GammaPoolSet(tokenA, tokenB, pair, gammaPool);
+        emit GammaPoolSet(pair, gammaPool);
     }
 }

@@ -3,10 +3,6 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import "../../../contracts/interfaces/IDeltaSwapFactory.sol";
-import "../../../contracts/interfaces/IDeltaSwapPair.sol";
-import "../../../contracts/interfaces/IDeltaSwapRouter02.sol";
-
 import "../../../contracts/DeltaSwapRouter02.sol";
 import "../../../contracts/DeltaSwapFactory.sol";
 
@@ -23,7 +19,14 @@ contract DeltaSwapSetup is Test {
         // Let's do the same thing with `getCode`
         //bytes memory args = abi.encode(arg1, arg2);
 
-        dsFactory = new DeltaSwapFactory(owner, owner);
+        bytes memory gsFactoryArgs = abi.encode(owner);
+        bytes memory gsFactoryBytecode = abi.encodePacked(vm.getCode("./test/foundry/bytecodes/GammaPoolFactory.json"), gsFactoryArgs);
+        address gsFactoryAddress;
+        assembly {
+            gsFactoryAddress := create(0, add(gsFactoryBytecode, 0x20), mload(gsFactoryBytecode))
+        }
+
+        dsFactory = new DeltaSwapFactory(owner, owner, gsFactoryAddress);
         dsRouter = new DeltaSwapRouter02(address(dsFactory), weth);
 
         dsPair = DeltaSwapPair(createPair(address(usdc), address(wbtc)));

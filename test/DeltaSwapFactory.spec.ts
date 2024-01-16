@@ -73,7 +73,7 @@ describe('DeltaSwapFactory', () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(2350052)
+        expect(receipt.gasUsed).to.eq(2387208)
     })
 
     it('setFeeTo', async () => {
@@ -95,17 +95,31 @@ describe('DeltaSwapFactory', () => {
         await expect(factory.setFeeToSetter(wallet.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
     })
 
-    it('setGammaPool', async () => {
+    it('setGSProtocolId', async () => {
+        await expect(factory.connect(other).setGSProtocolId(1000)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await factory.setGSProtocolId(1000)
+        expect(await factory.gsProtocolId()).to.eq(1000)
+    })
+
+    it('setGSFactory', async () => {
+        await expect(factory.connect(other).setGSFactory(other.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await factory.setGSFactory(other.address)
+        expect(await factory.gsFactory()).to.eq(other.address)
+    })
+
+    it('updateGammaPool', async () => {
         const res = await (await factory.createPair(...TEST_ADDRESSES)).wait();
         const pair = DeltaSwapPair.attach(res.events[0].args.pair);
-        expect(await pair.gammaPool()).to.eq(constants.AddressZero);
+        const gammaPoolAddr = await pair.gammaPool();
+        expect(gammaPoolAddr).to.not.eq(constants.AddressZero);
 
-        const addr1 = '0x3000000000000000000000000000000000000000';
-        const addr2 = '0x4000000000000000000000000000000000000000';
-        await expect(factory.connect(other).setGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1], addr1, addr2, 1)).to.be.revertedWith('DeltaSwap: FORBIDDEN');
-        expect(await pair.gammaPool()).to.eq(constants.AddressZero);
+        await expect(factory.connect(other).updateGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1])).to.be.revertedWith('DeltaSwap: FORBIDDEN');
+        expect(await pair.gammaPool()).to.eq(gammaPoolAddr);
 
-        await (await factory.setGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1], addr1, addr2, 1)).wait();
+        await factory.setGSProtocolId(1000);
+
+        await (await factory.updateGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1])).wait();
         expect(await pair.gammaPool()).to.not.eq(constants.AddressZero);
+        expect(await pair.gammaPool()).to.not.eq(gammaPoolAddr);
     })
 })
