@@ -82,8 +82,10 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         }
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
             // * never overflows, and + overflow is desired
-            price0CumulativeLast += uint256(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
-            price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
+            unchecked{
+                price0CumulativeLast += uint256(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
+                price1CumulativeLast += uint256(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
+            }
         }
         (uint112 _liquidityEMA, uint32 _lastLiquidityBlockNumber) = getLiquidityEMA(); // saves gas
         if(block.number != _lastLiquidityBlockNumber) {

@@ -59,7 +59,10 @@ contract ExampleSlidingWindowOracle {
     function getFirstObservationInWindow(address pair) private view returns (Observation storage firstObservation) {
         uint8 observationIndex = observationIndexOf(block.timestamp);
         // no overflow issue. if observationIndex + 1 overflows, result is still zero.
-        uint8 firstObservationIndex = (observationIndex + 1) % granularity;
+        uint8 firstObservationIndex;
+        unchecked {
+            firstObservationIndex= (observationIndex + 1) % granularity;
+        }
         firstObservation = pairObservations[pair][firstObservationIndex];
     }
 
@@ -94,9 +97,12 @@ contract ExampleSlidingWindowOracle {
         uint256 timeElapsed, uint256 amountIn
     ) private pure returns (uint256 amountOut) {
         // overflow is desired.
-        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(
-            uint224((priceCumulativeEnd - priceCumulativeStart) / timeElapsed)
-        );
+        FixedPoint.uq112x112 memory priceAverage;
+        unchecked {
+            priceAverage = FixedPoint.uq112x112(
+                uint224((priceCumulativeEnd - priceCumulativeStart) / timeElapsed)
+            );
+        }
         amountOut = priceAverage.mul(amountIn).decode144();
     }
 
