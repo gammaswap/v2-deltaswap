@@ -4,6 +4,7 @@ import { expandTo18Decimals } from './utilities'
 
 const UniswapV1FactoryJSON = require("../../buildV1/UniswapV1Factory.json");
 const UniswapV1ExchangeJSON = require("../../buildV1/UniswapV1Exchange.json");
+const GammaPoolFactoryJSON = require("@gammaswap/v1-core/artifacts/contracts/GammaPoolFactory.sol/GammaPoolFactory.json");
 
 const overrides = {
     gasLimit: 9999999
@@ -43,12 +44,15 @@ let DeltaSwapRouter02: any;
 let RouterEventEmitter: any;
 let UniswapV1Factory: any;
 let UniswapV1Exchange: any;
+let GammaPoolFactory: any;
 let WETH9: any;
 let ERC20: any;
 
 export async function factoryFixture(wallet: any): Promise<FactoryFixture> {
+    GammaPoolFactory = await ethers.getContractFactory(GammaPoolFactoryJSON.abi, GammaPoolFactoryJSON.bytecode, wallet);
+    const gsFactory = await GammaPoolFactory.deploy(wallet.address, overrides);
     DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
-    const factory = await DeltaSwapFactory.deploy(wallet.address, wallet.address, overrides);
+    const factory = await DeltaSwapFactory.deploy(wallet.address, wallet.address, gsFactory.address, overrides);
     return { factory }
 }
 
@@ -90,9 +94,12 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
     const factoryV1 = await UniswapV1Factory.deploy(overrides);
     await (await factoryV1.initializeFactory(exchangeV1.address, overrides)).wait();
 
+    GammaPoolFactory = await ethers.getContractFactory(GammaPoolFactoryJSON.abi, GammaPoolFactoryJSON.bytecode, wallet);
+    const gsFactory = await GammaPoolFactory.deploy(wallet.address, overrides);
+
     // deploy V2
     DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
-    const factoryV2 = await DeltaSwapFactory.deploy(wallet.address, wallet.address, overrides);
+    const factoryV2 = await DeltaSwapFactory.deploy(wallet.address, wallet.address, gsFactory.address, overrides);
 
     // deploy routers
     DeltaSwapRouter01 = await ethers.getContractFactory("DeltaSwapRouter01");
