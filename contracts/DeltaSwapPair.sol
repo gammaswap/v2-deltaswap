@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-v3
-pragma solidity =0.8.19;
+pragma solidity =0.8.21;
 
 import './libraries/DSMath.sol';
 import './libraries/UQ112x112.sol';
