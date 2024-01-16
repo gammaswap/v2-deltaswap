@@ -12,12 +12,13 @@ import "./tasks/swap-amounts";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.19",
+    version: "0.8.21",
     settings: {
       optimizer: {
         enabled: true,
         runs: 200,
       },
+      evmVersion: "paris",
       remappings: [
         "ds-test/=lib/forge-std/lib/ds-test/src/",
         "eth-gas-reporter/=eth-gas-reporter/",
