@@ -140,7 +140,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testTradingFeesThreshold() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setDSFeeThreshold(21);
         vm.stopPrank();
 
@@ -163,7 +163,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testProtRevenueShare100Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(0); // feeNum = 0 => fee share is 100%
         vm.stopPrank();
@@ -198,7 +198,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testProtRevenueShare25Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(3000); // feeNum = 3000 => fee share is 25%
         vm.stopPrank();
@@ -238,7 +238,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testProtRevenueShare33Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(2000); // feeNum = 2000 => fee share is 33.33%
         vm.stopPrank();
@@ -278,7 +278,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testProtRevenueShare50Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(1000); // feeNum = 1000 => fee share is 50%
         vm.stopPrank();
@@ -319,7 +319,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     // Maybe the difference is a rounding error?
     function testProtRevenueShare60Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(666); // feeNum = 666 => fee share is 60%
         vm.stopPrank();
@@ -359,7 +359,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testProtRevenueShare75Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(333); // feeNum = 333 => fee share is 75%
         vm.stopPrank();
@@ -400,7 +400,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     // Maybe the difference is a rounding error?
     function testProtRevenueShare80Pct() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeTo(dsFactory.feeToSetter());
         dsFactory.setFeeNum(250); // feeNum = 250 => fee share is 80%
         vm.stopPrank();
@@ -440,7 +440,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testTradingDSFees() public {
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setDSFee(100); // fee is 10%
         vm.stopPrank();
 
@@ -473,7 +473,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         uint8 dsFeeThreshold = dsFactory.dsFeeThreshold();
         assertNotEq(dsFeeThreshold, 21);
 
-        vm.prank(addr1);
+        vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
         dsFactory.setDSFeeThreshold(21);
         vm.stopPrank();
@@ -484,7 +484,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     function testDSFees() public {
         assertEq(dsFactory.dsFee(), 3);
 
-        vm.prank(address(dsFactory.feeToSetter()));
+        vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setDSFee(50);
         vm.stopPrank();
 
@@ -495,7 +495,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         uint8 dsFee = dsFactory.dsFee();
         assertNotEq(dsFee, 50);
 
-        vm.prank(addr1);
+        vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
         dsFactory.setDSFee(50);
         vm.stopPrank();
