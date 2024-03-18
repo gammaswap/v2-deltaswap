@@ -116,8 +116,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     function calcTradingFee(uint256 tradeLiquidity, uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
-        (uint8 dsFee, uint8 dsFeeThreshold) = IDeltaSwapFactory(factory).dsFeeInfo();
-        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= lastLiquidityEMA * dsFeeThreshold / 1000) { // if trade >= threshold, charge fee
+        (uint16 dsFee, uint16 dsFeeThreshold) = IDeltaSwapFactory(factory).dsFeeInfo();
+        if(dsFee > 0 && DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= lastLiquidityEMA * dsFeeThreshold / 100000) { // if trade >= threshold, charge fee
             return dsFee;
         }
         return 0;
@@ -271,9 +271,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             } else {
                 fee = IDeltaSwapFactory(factory).gsFee();
             }
-            uint256 balance0Adjusted = balance0 * 1000 - amount0In * fee;
-            uint256 balance1Adjusted = balance1 * 1000 - amount1In * fee;
-            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (1000**2), 'DeltaSwap: K');
+            uint256 balance0Adjusted = balance0 * 100000 - amount0In * fee;
+            uint256 balance1Adjusted = balance1 * 100000 - amount1In * fee;
+            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (100000**2), 'DeltaSwap: K');
         }
 
         _update(balance0, balance1, _reserve0, _reserve1);

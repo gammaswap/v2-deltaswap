@@ -11,9 +11,9 @@ interface IDeltaSwapFactory {
     function gammaPoolSetter() external view returns (address);
     function gsFactory() external view returns(address);
     function gsProtocolId() external view returns(uint16);
-    function gsFee() external view returns(uint8);
-    function dsFee() external view returns(uint8);
-    function dsFeeThreshold() external view returns(uint8);
+    function gsFee() external view returns(uint16);
+    function dsFee() external view returns(uint16);
+    function dsFeeThreshold() external view returns(uint16);
 
     function getPair(address tokenA, address tokenB) external view returns (address pair);
     function allPairs(uint256) external view returns (address pair);
@@ -27,12 +27,12 @@ interface IDeltaSwapFactory {
 
     function setGSFactory(address factory) external;
     function setGSProtocolId(uint16 protocolId) external;
-    function setGSFee(uint8 fee) external;
-    function setDSFee(uint8 fee) external;
-    function setDSFeeThreshold(uint8 feeThreshold) external;
+    function setGSFee(uint16 fee) external;
+    function setDSFee(uint16 fee) external;
+    function setDSFeeThreshold(uint16 feeThreshold) external;
 
     function feeInfo() external view returns (address,uint16);
-    function dsFeeInfo() external view returns (uint8,uint8);
+    function dsFeeInfo() external view returns (uint16,uint16);
 
     function setGammaPoolSetter(address) external;
     function updateGammaPool(address tokenA, address tokenB) external;
