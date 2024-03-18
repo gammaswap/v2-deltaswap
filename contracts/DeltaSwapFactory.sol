@@ -16,7 +16,7 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
 
     uint16 public override gsFee = 300; // GammaPool swap fee
     uint16 public override dsFee = 300; // Fee on large trades
-    uint16 public override dsFeeThreshold = 2000; // >2% of Liq trades pay fee. TODO: should change to 10 => 1bps
+    uint16 public override dsFeeThreshold = 2000; // >2% of Liq trades pay fee.
 
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
