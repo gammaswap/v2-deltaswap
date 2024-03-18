@@ -63,7 +63,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
-        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 1000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
+        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 100000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
             assertEq(fee,dsFactory.dsFee());
         } else {
             assertEq(fee,0);
@@ -141,10 +141,10 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testTradingFeesThreshold() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setDSFeeThreshold(21);
+        dsFactory.setDSFeeThreshold(2100);
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFeeThreshold(), 21);
+        assertEq(dsFactory.dsFeeThreshold(), 2100);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -441,10 +441,10 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testTradingDSFees() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setDSFee(100); // fee is 10%
+        dsFactory.setDSFee(10000); // fee is 10%
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFee(), 100);
+        assertEq(dsFactory.dsFee(), 10000);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -470,7 +470,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testDSFeesThresholdForbidden() public {
-        uint8 dsFeeThreshold = dsFactory.dsFeeThreshold();
+        uint16 dsFeeThreshold = dsFactory.dsFeeThreshold();
         assertNotEq(dsFeeThreshold, 21);
 
         vm.startPrank(addr1);
@@ -482,7 +482,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testDSFees() public {
-        assertEq(dsFactory.dsFee(), 3);
+        assertEq(dsFactory.dsFee(), 300);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setDSFee(50);
@@ -492,7 +492,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testDSFeesForbidden() public {
-        uint8 dsFee = dsFactory.dsFee();
+        uint16 dsFee = dsFactory.dsFee();
         assertNotEq(dsFee, 50);
 
         vm.startPrank(addr1);
@@ -554,7 +554,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testSetGSFee() public {
-        assertEq(dsFactory.gsFee(), 3);
+        assertEq(dsFactory.gsFee(), 300);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setGSFee(5);
@@ -605,15 +605,15 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         vm.expectRevert("DeltaSwap: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
-        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 1);
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 100);
         vm.expectRevert("DeltaSwap: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
-        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 2);
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 200);
         vm.expectRevert("DeltaSwap: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
-        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 3);
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 300);
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
         vm.stopPrank();
 

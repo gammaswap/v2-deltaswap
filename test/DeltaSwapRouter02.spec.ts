@@ -45,23 +45,23 @@ describe('DeltaSwapRouter02', () => {
 
         let reserveIn = BigNumber.from(5).mul(ONE);
         let reserveOut = BigNumber.from(10).mul(ONE);
-        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 3)).to.eq("1662497915624478906");
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 3)).to.eq("1666624999791665624");
 
         reserveIn = BigNumber.from(5).mul(ONE);
         reserveOut = BigNumber.from(10).mul(ONE);
-        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("2851015155847869602");
+        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("2857081632128275385");
 
         reserveIn = BigNumber.from(10).mul(ONE);
         reserveOut = BigNumber.from(5).mul(ONE);
-        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("831248957812239453");
+        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("833312499895832812");
 
         reserveIn = BigNumber.from(10).mul(ONE);
         reserveOut = BigNumber.from(5).mul(ONE);
-        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("453718857974177123");
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("454537190067618304");
 
         reserveIn = BigNumber.from(10).mul(ONE);
         reserveOut = BigNumber.from(10).mul(ONE);
-        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("907437715948354246");
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("909074380135236609");
 
         reserveIn = BigNumber.from(100).mul(ONE);
         reserveOut = BigNumber.from(100).mul(ONE);

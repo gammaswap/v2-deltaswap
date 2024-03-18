@@ -20,8 +20,8 @@ library DeltaSwapLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'a82767a5e39a2e216962a2ebff796dcc37cd05dfd6f7a149e1f8fbb6bf487658' // init code hash
-                //hex'7f507cb8f4fb141418e455f4b99d5bd10dbabf9bcc0607d37ceee34013646a9c' // init code hash
+                hex'2fecf977542204103c31c2e741ee26e28a43ff3bdae8842e4c91762f9f3ae5b5' // init code hash
+                //hex'77f24693a166f241d585911473f08ccdff9442f29bb12fef1b160fce4465ab00' // init code hash
             )))));
     }
 
@@ -44,9 +44,9 @@ library DeltaSwapLibrary {
     function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, uint256 fee) internal pure returns (uint256 amountOut) {
         require(amountIn > 0, 'DeltaSwapLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY');
-        uint256 amountInWithFee = amountIn * (1000 - fee);
+        uint256 amountInWithFee = amountIn * (100000 - fee);
         uint256 numerator = amountInWithFee * reserveOut;
-        uint256 denominator = reserveIn * 1000 + amountInWithFee;
+        uint256 denominator = reserveIn * 100000 + amountInWithFee;
         amountOut = numerator / denominator;
     }
 
@@ -54,8 +54,8 @@ library DeltaSwapLibrary {
     function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut, uint256 fee) internal pure returns (uint256 amountIn) {
         require(amountOut > 0, 'DeltaSwapLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY');
-        uint256 numerator = reserveIn * amountOut * 1000;
-        uint256 denominator = (reserveOut - amountOut) * (1000 - fee);
+        uint256 numerator = reserveIn * amountOut * 100000;
+        uint256 denominator = (reserveOut - amountOut) * (100000 - fee);
         amountIn = (numerator / denominator) + 1;
     }
 
