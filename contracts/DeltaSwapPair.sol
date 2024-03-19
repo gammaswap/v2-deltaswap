@@ -32,6 +32,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     uint112 private reserve1;           // uses single storage slot, accessible via getReserves
     uint32  private blockTimestampLast; // uses single storage slot, accessible via getReserves
 
+    uint256 public rootK0;
+    uint256 public rootK1;
+
     uint256 public override price0CumulativeLast;
     uint256 public override price1CumulativeLast;
     uint256 public override kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
@@ -48,6 +51,26 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         _reserve0 = reserve0;
         _reserve1 = reserve1;
         _blockTimestampLast = blockTimestampLast;
+    }
+
+    function getLPReserves() public override view returns (uint112 _reserve0, uint112 _reserve1, uint256 _discount) {
+        uint256 _rootK0 = rootK0;
+        uint256 _rootK1 = rootK1;
+        _discount = 1e18;
+
+        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
+        uint32 timeElapsed;
+        unchecked {
+            timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
+        }
+
+        if(timeElapsed > 0 && _rootK1 > _rootK0) {
+            _rootK0 = _rootK0 + (_rootK1 - _rootK0) * timeElapsed / 86400; // 1 day in seconds
+            _discount = _discount * _rootK1 / _rootK0;
+        }
+
+        _reserve0 = uint112(reserve0 * _rootK0 / _rootK1);
+        _reserve1 = uint112(reserve1 * _rootK0 / _rootK1);
     }
 
     function _safeTransfer(address token, address to, uint256 value) private {
@@ -92,6 +115,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), _liquidityEMA, DSMath.max(block.number - _lastLiquidityBlockNumber, 10)));
             lastLiquidityBlockNumber = uint32(block.number);
         }
+        rootK1 = DSMath.sqrt(balance0*balance1);
+        rootK0 = DSMath.min(DSMath.sqrt(uint256(_reserve0)*_reserve1), rootK1);
         reserve0 = uint112(balance0);
         reserve1 = uint112(balance1);
         blockTimestampLast = blockTimestamp;
@@ -201,6 +226,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
+        (_reserve0, _reserve1,) = getLPReserves(); // gas savings
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
@@ -212,14 +238,17 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         require(liquidity > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
 
+        _reserve0 += uint112(amount0);
+        _reserve1 += uint112(amount1);
+
         _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint256(reserve0) * reserve1; // reserve0 and reserve1 are up-to-date
+        if (feeOn) kLast = (uint256(_reserve0) * _reserve1); // reserve0 and reserve1 are up-to-date
         emit Mint(msg.sender, amount0, amount1);
     }
 
     // this low-level function should be called from a contract which performs important safety checks
     function burn(address to) external override lock returns (uint256 amount0, uint256 amount1) {
-        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
+        (uint112 _reserve0, uint112 _reserve1,) = getLPReserves(); // gas savings
         address _token0 = token0;                                // gas savings
         address _token1 = token1;                                // gas savings
         uint256 balance0 = IERC20(_token0).balanceOf(address(this));
@@ -228,8 +257,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
-        amount0 = liquidity * balance0 / _totalSupply; // using balances ensures pro-rata distribution
-        amount1 = liquidity * balance1 / _totalSupply; // using balances ensures pro-rata distribution
+        amount0 = liquidity * _reserve0 / _totalSupply; // using balances ensures pro-rata distribution
+        amount1 = liquidity * _reserve1 / _totalSupply; // using balances ensures pro-rata distribution
         require(amount0 > 0 && amount1 > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_BURNED');
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
@@ -237,8 +266,11 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         balance0 = IERC20(_token0).balanceOf(address(this));
         balance1 = IERC20(_token1).balanceOf(address(this));
 
+        _reserve0 -= uint112(amount0);
+        _reserve1 -= uint112(amount1);
+
         _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint256(reserve0) * reserve1; // reserve0 and reserve1 are up-to-date
+        if (feeOn) kLast = (uint256(_reserve0) * _reserve1); // reserve0 and reserve1 are up-to-date
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
@@ -276,6 +308,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (100000**2), 'DeltaSwap: K');
         }
 
+        (_reserve0,_reserve1,) = getLPReserves();
         _update(balance0, balance1, _reserve0, _reserve1);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
@@ -290,6 +323,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
     // force reserves to match balances
     function sync() external override lock {
-        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
+        (uint112 _reserve0, uint112 _reserve1,) = getLPReserves();
+        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), _reserve0, _reserve1);
     }
 }
