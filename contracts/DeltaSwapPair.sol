@@ -57,6 +57,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         uint256 _rootK0 = rootK0;
         uint256 _rootK1 = rootK1;
         _discount = 1e18;
+        if(_rootK1 == 0) { // no deposits yet
+            return(0, 0, _discount);
+        }
 
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed;
@@ -64,8 +67,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         }
 
-        if(timeElapsed > 0 && _rootK1 > _rootK0) {
-            _rootK0 = _rootK0 + (_rootK1 - _rootK0) * timeElapsed / 86400; // 1 day in seconds
+        if(timeElapsed > 0 && _rootK0 > 0 && _rootK1 > _rootK0) {
+            _rootK0 = _rootK0 + (_rootK1 - _rootK0) * DSMath.min(timeElapsed, 86400) / 86400; // 1 day in seconds
             _discount = _discount * _rootK1 / _rootK0;
         }
 
@@ -96,7 +99,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     // update reserves and, on the first call per block, price accumulators
-    function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
+    function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1, uint112 amount0, uint112 amount1, bool isDeposit) private returns(uint112,uint112) {
         require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'DeltaSwap: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed;
@@ -115,12 +118,20 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), _liquidityEMA, DSMath.max(block.number - _lastLiquidityBlockNumber, 10)));
             lastLiquidityBlockNumber = uint32(block.number);
         }
+        if(isDeposit) {
+            _reserve0 += amount0;
+            _reserve1 += amount1;
+        } else {
+            _reserve0 -= amount0;
+            _reserve1 -= amount1;
+        }
         rootK1 = DSMath.sqrt(balance0*balance1);
-        rootK0 = DSMath.min(DSMath.sqrt(uint256(_reserve0)*_reserve1), rootK1);
+        rootK0 = DSMath.min(DSMath.sqrt(uint256(_reserve0)*_reserve1) + 1, rootK1); // +1 because square root formula rounds down
         reserve0 = uint112(balance0);
         reserve1 = uint112(balance1);
         blockTimestampLast = blockTimestamp;
         emit Sync(reserve0, reserve1);
+        return(_reserve0, _reserve1);
     }
 
     function _updateLiquidityTradedEMA(uint256 tradeLiquidity) internal virtual returns(uint256 _tradeLiquidityEMA) {
@@ -238,11 +249,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         require(liquidity > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
 
-        _reserve0 += uint112(amount0);
-        _reserve1 += uint112(amount1);
-
-        _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = (uint256(_reserve0) * _reserve1); // reserve0 and reserve1 are up-to-date
+        (_reserve0, _reserve1) = _update(balance0, balance1, _reserve0, _reserve1, uint112(amount0), uint112(amount1), true);
+        if (feeOn) kLast = (uint256(_reserve0)* _reserve1); // reserve0 and reserve1 are up-to-date
         emit Mint(msg.sender, amount0, amount1);
     }
 
@@ -266,10 +274,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         balance0 = IERC20(_token0).balanceOf(address(this));
         balance1 = IERC20(_token1).balanceOf(address(this));
 
-        _reserve0 -= uint112(amount0);
-        _reserve1 -= uint112(amount1);
-
-        _update(balance0, balance1, _reserve0, _reserve1);
+        (_reserve0, _reserve1) = _update(balance0, balance1, _reserve0, _reserve1, uint112(amount0), uint112(amount1), false);
         if (feeOn) kLast = (uint256(_reserve0) * _reserve1); // reserve0 and reserve1 are up-to-date
         emit Burn(msg.sender, amount0, amount1, to);
     }
@@ -309,7 +314,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         }
 
         (_reserve0,_reserve1,) = getLPReserves();
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(balance0, balance1, _reserve0, _reserve1, 0, 0, false);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
 
@@ -324,6 +329,6 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     // force reserves to match balances
     function sync() external override lock {
         (uint112 _reserve0, uint112 _reserve1,) = getLPReserves();
-        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), _reserve0, _reserve1);
+        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), _reserve0, _reserve1, 0, 0, false);
     }
 }
