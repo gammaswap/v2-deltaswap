@@ -23,6 +23,7 @@ interface IDeltaSwapPair is IDeltaSwapERC20 {
     function token1() external view returns (address);
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
     function getLPReserves() external view returns (uint112 _reserve0, uint112 _reserve1, uint256 _discount);
+    function getRootK() external view returns(uint128 _rootK0, uint128 _rootK1);
     function price0CumulativeLast() external view returns (uint256);
     function price1CumulativeLast() external view returns (uint256);
     function kLast() external view returns (uint256);

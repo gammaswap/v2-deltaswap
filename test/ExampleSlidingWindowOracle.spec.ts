@@ -287,13 +287,13 @@ describe('ExampleSlidingWindowOracle', () => {
                 await slidingWindowOracle.update(token0.address, token1.address, overrides)
             })
 
-            it.skip('has cumulative price in previous bucket', async () => {
+            it('has cumulative price in previous bucket', async () => {
                 expect(
                     await slidingWindowOracle.pairObservations(pair.address, observationIndexOf(previousBlockTimestamp))
                 ).to.deep.eq([BigNumber.from(previousBlockTimestamp-1), previousCumulativePrices[0].div(2), previousCumulativePrices[1].div(2)])
             }).retries(5) // test flaky because timestamps aren't mocked
 
-            it.skip('has cumulative price in current bucket', async () => {
+            it('has cumulative price in current bucket', async () => {
                 const timeElapsed = blockTimestamp - previousBlockTimestamp + 3
                 const prices = encodePrice(defaultToken0Amount, defaultToken1Amount)
                 expect(
@@ -305,7 +305,7 @@ describe('ExampleSlidingWindowOracle', () => {
                 expect(await slidingWindowOracle.consult(token0.address, 100, token1.address)).to.eq(200)
             })
 
-            it.skip('provides the current ratio in consult token1', async () => {
+            it('provides the current ratio in consult token1', async () => {
                 expect(await slidingWindowOracle.consult(token1.address, 100, token0.address)).to.eq(50)
             })
         })
