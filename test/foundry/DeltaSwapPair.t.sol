@@ -181,6 +181,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 0);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -190,6 +191,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertEq(liquidity1 * totSupply / totSupply1, liquidity);
@@ -216,6 +218,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 3000);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -225,6 +228,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertGt(liquidity1 * totSupply / totSupply1, liquidity);
@@ -256,6 +260,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 2000);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -265,6 +270,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertGt(liquidity1 * totSupply / totSupply1, liquidity);
@@ -296,6 +302,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 1000);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -305,6 +312,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertGt(liquidity1 * totSupply / totSupply1, liquidity);
@@ -337,6 +345,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 666);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -346,6 +355,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertGt(liquidity1 * totSupply / totSupply1, liquidity);
@@ -377,6 +387,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 333);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -386,6 +397,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertGt(liquidity1 * totSupply / totSupply1, liquidity);
@@ -418,6 +430,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(dsFactory.feeNum(), 250);
         sell_wbtc(addr1, 4*1e18);
 
+        vm.warp(24*60*60 + 1);
         vm.startPrank(addr1);
         dsPair.transfer(address(dsPair), 1000);
         dsPair.burn(addr1);
@@ -427,6 +440,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(reserve0, 100*1e18);
         assertNotEq(reserve1, 100*1e18);
 
+        (reserve0, reserve1,) = dsPair.getLPReserves();
         uint256 liquidity1 = DSMath.sqrt(reserve0 * reserve1);
         uint256 totSupply1 = dsPair.totalSupply();
         assertGt(liquidity1 * totSupply / totSupply1, liquidity);
