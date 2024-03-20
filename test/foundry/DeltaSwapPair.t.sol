@@ -61,6 +61,12 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         vm.stopPrank();
     }
 
+    function buy_wbtc(address addr, uint256 amount) public {
+        vm.startPrank(addr);
+        buyTokenOut(amount, address(usdc), address(wbtc), msg.sender); // quote: 1 wbtc = 1 USDC
+        vm.stopPrank();
+    }
+
     function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
         if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 100000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
@@ -68,6 +74,101 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         } else {
             assertEq(fee,0);
         }
+    }
+
+    function testMintFeesEarned() public {
+        dsFactory.setDSFeeThreshold(0);
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 1e18);
+        buy_wbtc(addr1, 1e18 - 2970385258968089); // gets price back to 1 at higher liquidity
+
+        (uint256 _lpReserve0, uint256 _lpReserve1,) = dsPair.getLPReserves();
+        (uint256 _reserve0, uint256 _reserve1,) = dsPair.getReserves();
+        uint256 _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
+        assertEq(reserve1*_reserve0,reserve0*_reserve1); // price stays the same
+
+        assertGt(_reserve0, reserve0);
+        assertGt(_reserve1, reserve1);
+        assertGt(_liquidity, liquidity);
+        assertEq(_lpReserve0/10, lpReserve0/10); // rounding error at the last decimal
+        assertEq(_lpReserve1/10, lpReserve1/10); // rounding error at the last decimal
+
+        vm.warp(12*60*60 + 1);
+
+        (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(_reserve0, reserve0);
+        assertEq(_reserve1, reserve1);
+
+        assertEq(_lpReserve0/10 - lpReserve0/10, 297038525896808/2);
+        assertEq(_lpReserve1/10 - lpReserve1/10, 297038525896808/2);
+
+        vm.warp(24*60*60 + 1);
+
+        (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(_reserve0, reserve0);
+        assertEq(_reserve1, reserve1);
+
+        assertEq(_lpReserve0/10 - lpReserve0/10, 297038525896808);
+        assertEq(_lpReserve1/10 - lpReserve1/10, 297038525896808);
+
+        dsPair.sync();
+
+        (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        assertEq(_lpReserve0, reserve0);
+        assertEq(_lpReserve1, reserve1);
+
+        depositLiquidityInCFMM(addr2, 100*1e18, 100*1e18);
+        assertGt(dsPair.balanceOf(addr1) - dsPair.balanceOf(addr2), 297038525896808);
+
+        uint256 amount = 1_000_000 * 1e18;
+        address addr3 = vm.addr(6666);
+        usdc.mint(addr3, amount);
+        wbtc.mint(addr3, amount);
+        address[] memory _tokens = new address[](2);
+        _tokens[0] = address(usdc);
+        _tokens[1] = address(wbtc);
+        approveRouterForAddress(addr3, _tokens);
+
+        vm.warp(48*60*60 + 1);
+        depositLiquidityInCFMM(addr3, 100*1e18, 100*1e18);
+        assertEq(dsPair.balanceOf(addr2), dsPair.balanceOf(addr3));
+    }
+
+    function testMintFeesUnearned() public {
+        dsFactory.setDSFeeThreshold(0);
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 1e18);
+        buy_wbtc(addr1, 1e18 - 2970385258968089); // gets price back to 1 at higher liquidity
+
+        (uint256 _lpReserve0, uint256 _lpReserve1,) = dsPair.getLPReserves();
+        (uint256 _reserve0, uint256 _reserve1,) = dsPair.getReserves();
+        uint256 _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
+        assertEq(reserve1*_reserve0,reserve0*_reserve1); // price stays the same
+
+        assertGt(_reserve0, reserve0);
+        assertGt(_reserve1, reserve1);
+        assertGt(_liquidity, liquidity);
+        assertEq(_lpReserve0/10, lpReserve0/10); // rounding error at the last decimal
+        assertEq(_lpReserve1/10, lpReserve1/10); // rounding error at the last decimal
+
+        depositLiquidityInCFMM(addr2, 100*1e18, 100*1e18);
+        assertEq(dsPair.balanceOf(addr1) + 1000 - dsPair.balanceOf(addr2), 2); // +1000 because of first liquidity, 2 because of rounding of second mint (less than should have)
     }
 
     function testTradingFeesHalfPctMinus1() public {

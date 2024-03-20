@@ -50,11 +50,11 @@ contract DeltaSwapSetup is Test {
         return dsRouter.removeLiquidity(token0, token1, liquidity, 0, 0, msg.sender, type(uint256).max);
     }
 
-    function buyTokenOut(uint256 amountOut, address tokenIn, address tokenOut) public returns(uint256[] memory amounts) {
+    function buyTokenOut(uint256 amountOut, address tokenIn, address tokenOut, address to) public returns(uint256[] memory amounts) {
         address[] memory path = new address[](2);
         path[0] = tokenIn;
         path[1] = tokenOut;
-        return dsRouter.swapTokensForExactTokens(amountOut, type(uint256).max, path, msg.sender, type(uint256).max);
+        return dsRouter.swapTokensForExactTokens(amountOut, type(uint256).max, path, to, type(uint256).max);
     }
 
     function sellTokenIn(uint256 amountIn, address tokenIn, address tokenOut, address to) public returns(uint256[] memory amounts) {
