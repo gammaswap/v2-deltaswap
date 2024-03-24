@@ -76,6 +76,70 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         }
     }
 
+    function testMultiDayStream() public {
+        dsFactory.setDSFeeThreshold(0);
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 1e18);
+        buy_wbtc(addr1, 1e18 - 2970385258968089); // gets price back to 1 at higher liquidity
+
+        (uint256 _lpReserve0, uint256 _lpReserve1,) = dsPair.getLPReserves();
+        (uint256 _reserve0, uint256 _reserve1,) = dsPair.getReserves();
+        uint256 _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
+        assertEq(reserve1*_reserve0,reserve0*_reserve1); // price stays the same
+
+        assertGt(_reserve0, reserve0);
+        assertGt(_reserve1, reserve1);
+        assertGt(_liquidity, liquidity);
+        assertEq(_lpReserve0/10, lpReserve0/10); // rounding error at the last decimal
+        assertEq(_lpReserve1/10, lpReserve1/10); // rounding error at the last decimal
+
+        vm.warp(12*60*60 + 1);
+
+        /*(_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        (reserve0, reserve1,) = dsPair.getReserves();
+        assertEq(_reserve0, reserve0);
+        assertEq(_reserve1, reserve1);
+
+        assertEq(_lpReserve0/10 - lpReserve0/10, 297038525896808/2);
+        assertEq(_lpReserve1/10 - lpReserve1/10, 297038525896808/2);
+
+        console.log("px1a:",(_reserve1 * 1e18 / _reserve0));
+        console.log("px1b:",(_lpReserve1 * 1e18 / _lpReserve0));/**/
+
+        //IMPORTANT
+        sell_wbtc(addr1, 1e18);
+        buy_wbtc(addr1, 1e18 - 2970386129930623); // gets price back to 1 at higher liquidity
+
+        (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        (_reserve0, _reserve1,) = dsPair.getReserves();
+        _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
+
+        console.log("px2a:",(_reserve1 * 1e18 / _reserve0));
+        console.log("px2b:",(_lpReserve1 * 1e18 / _lpReserve0));
+        assertEq(reserve1*1e18/reserve0,_reserve1*1e18/_reserve0); // price stays the same
+
+        vm.warp(24*60*60 + 1);
+
+        //IMPORTANT
+        (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        //assertGt(_reserve0, reserve0);
+        //assertGt(_reserve1, reserve1);
+
+        console.log(_lpReserve0 - lpReserve0 - 2970385258968089);
+
+        //assertEq(_lpReserve0, lpReserve0);
+        //assertEq(_lpReserve1, lpReserve1);
+        //assertGt(_lpReserve0/10 - lpReserve0/10, 297038525896808 + 297038525896808/2);
+        //assertGt(_lpReserve1/10 - lpReserve1/10, 297038525896808 + 297038525896808/2);
+    }
+
     function testMintFeesEarned() public {
         dsFactory.setDSFeeThreshold(0);
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);

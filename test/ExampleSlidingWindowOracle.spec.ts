@@ -180,7 +180,7 @@ describe('ExampleSlidingWindowOracle', () => {
         it('gas for first update (allocates empty array)', async () => {
             const tx = await slidingWindowOracle.update(token0.address, token1.address, overrides)
             const receipt = await tx.wait()
-            expect(receipt.gasUsed).to.eq('136595')
+            expect(receipt.gasUsed).to.eq('134533')
         }).retries(2) // gas test inconsistent
 
         it('gas for second update in the same period (skips)', async () => {
@@ -223,7 +223,7 @@ describe('ExampleSlidingWindowOracle', () => {
             await mineBlock(provider,  block.timestamp + 3600)
             const tx = await slidingWindowOracle.update(token0.address, token1.address, overrides)
             const receipt = await tx.wait()
-            expect(receipt.gasUsed).to.eq('106435')
+            expect(receipt.gasUsed).to.eq('104373')
         }).retries(2) // gas test inconsistent
 
         it('second update in one timeslot does not overwrite', async () => {

@@ -22,11 +22,11 @@ interface IDeltaSwapPair is IDeltaSwapERC20 {
     function token0() external view returns (address);
     function token1() external view returns (address);
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    function getLPReserves() external view returns (uint112 _reserve0, uint112 _reserve1, uint256 _discount);
-    function getRootK() external view returns(uint128 _rootK0, uint128 _rootK1);
+    function getLPReserves() external view returns (uint112 _reserve0, uint112 _reserve1, uint256 _rate);
     function price0CumulativeLast() external view returns (uint256);
     function price1CumulativeLast() external view returns (uint256);
     function kLast() external view returns (uint256);
+    function rootK0() external view returns(uint112);
 
     function mint(address to) external returns (uint256 liquidity);
     function burn(address to) external returns (uint256 amount0, uint256 amount1);
@@ -36,6 +36,8 @@ interface IDeltaSwapPair is IDeltaSwapERC20 {
 
     function initialize(address, address) external;
 
+    function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external;
+    function getFeeParameters() external view returns(address _gammaPool, uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod);
     function gammaPool() external view returns (address);
     function setGammaPool(address gammaPool) external;
 
