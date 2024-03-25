@@ -104,7 +104,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(_lpReserve0/10, lpReserve0/10); // rounding error at the last decimal
         assertEq(_lpReserve1/10, lpReserve1/10); // rounding error at the last decimal
 
-        vm.warp(12*60*60 + 1);
+        vm.warp(4*60*60 + 1);
 
         (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
         (reserve0, reserve1,) = dsPair.getReserves();
@@ -122,7 +122,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
         assertEq(reserve1*1e18/reserve0,_reserve1*1e18/_reserve0); // price stays the same
 
-        vm.warp(24*60*60 + 1);
+        vm.warp(8*60*60 + 1);
 
         (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
         assertGt(_reserve0, reserve0);
@@ -166,7 +166,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(_lpReserve0/10, lpReserve0/10); // rounding error at the last decimal
         assertEq(_lpReserve1/10, lpReserve1/10); // rounding error at the last decimal
 
-        vm.warp(12*60*60 + 1);
+        vm.warp(4*60*60 + 1);
 
         (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
         (reserve0, reserve1,) = dsPair.getReserves();
@@ -176,7 +176,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(_lpReserve0/10 - lpReserve0/10, 297038525896808/2);
         assertEq(_lpReserve1/10 - lpReserve1/10, 297038525896808/2);
 
-        vm.warp(24*60*60 + 1);
+        vm.warp(8*60*60 + 1);
 
         (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
         (reserve0, reserve1,) = dsPair.getReserves();
@@ -204,7 +204,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         _tokens[1] = address(wbtc);
         approveRouterForAddress(addr3, _tokens);
 
-        vm.warp(48*60*60 + 1);
+        vm.warp(16*60*60 + 1);
         depositLiquidityInCFMM(addr3, 100*1e18, 100*1e18);
         assertEq(dsPair.balanceOf(addr2), dsPair.balanceOf(addr3));
     }
@@ -626,11 +626,11 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     function testTradingDSFees() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
         (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, 10000, _dsFeeThreshold, _yieldPeriod);// fee is 10%
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, 1000, _dsFeeThreshold, _yieldPeriod);// fee is 10%
         vm.stopPrank();
 
         (,,_dsFee,,) = dsPair.getFeeParameters();
-        assertEq(_dsFee, 10000);
+        assertEq(_dsFee, 1000);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -670,7 +670,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testDSFees() public {
         (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        assertEq(_dsFee, 300);
+        assertEq(_dsFee, 30);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeParameters(address(dsPair), _gsFee, 50, _dsFeeThreshold, _yieldPeriod);
@@ -745,7 +745,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testSetGSFee() public {
         (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        assertEq(_gsFee, 300);
+        assertEq(_gsFee, 30);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
         dsFactory.setFeeParameters(address(dsPair), 5, _dsFee, _dsFeeThreshold, _yieldPeriod);
@@ -798,15 +798,15 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         vm.expectRevert("DeltaSwap: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
-        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 100);
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 10);
         vm.expectRevert("DeltaSwap: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
-        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 200);
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 20);
         vm.expectRevert("DeltaSwap: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
-        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 300);
+        amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 30);
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
         vm.stopPrank();
 

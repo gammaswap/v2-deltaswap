@@ -45,23 +45,23 @@ describe('DeltaSwapRouter02', () => {
 
         let reserveIn = BigNumber.from(5).mul(ONE);
         let reserveOut = BigNumber.from(10).mul(ONE);
-        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 3)).to.eq("1666624999791665624");
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 30)).to.eq("1662497915624478906");
 
         reserveIn = BigNumber.from(5).mul(ONE);
         reserveOut = BigNumber.from(10).mul(ONE);
-        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("2857081632128275385");
+        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 30)).to.eq("2851015155847869602");
 
         reserveIn = BigNumber.from(10).mul(ONE);
         reserveOut = BigNumber.from(5).mul(ONE);
-        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 3)).to.eq("833312499895832812");
+        expect(await router.getAmountOut(swapAmt.mul(2), reserveIn, reserveOut, 30)).to.eq("831248957812239453");
 
         reserveIn = BigNumber.from(10).mul(ONE);
         reserveOut = BigNumber.from(5).mul(ONE);
-        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("454537190067618304");
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 20)).to.eq("453718857974177123");
 
         reserveIn = BigNumber.from(10).mul(ONE);
         reserveOut = BigNumber.from(10).mul(ONE);
-        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 2)).to.eq("909074380135236609");
+        expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 20)).to.eq("907437715948354246");
 
         reserveIn = BigNumber.from(100).mul(ONE);
         reserveOut = BigNumber.from(100).mul(ONE);
@@ -71,27 +71,27 @@ describe('DeltaSwapRouter02', () => {
         reserveOut = BigNumber.from(1000).mul(ONE);
         expect(await router.getAmountOut(swapAmt, reserveIn, reserveOut, 0)).to.eq("999000999000999000");
 
-        expect(await router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(1))
-        await expect(router.getAmountOut(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
+        expect(await router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(100), 30)).to.eq(BigNumber.from(1))
+        await expect(router.getAmountOut(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 30)).to.be.revertedWith(
             'DeltaSwapLibrary: INSUFFICIENT_INPUT_AMOUNT'
         )
-        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(0), BigNumber.from(100), 3)).to.be.revertedWith(
+        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(0), BigNumber.from(100), 30)).to.be.revertedWith(
             'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
-        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(0), 3)).to.be.revertedWith(
+        await expect(router.getAmountOut(BigNumber.from(2), BigNumber.from(100), BigNumber.from(0), 30)).to.be.revertedWith(
             'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
     })
 
     it('getAmountIn', async () => {
-        expect(await router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(100), 3)).to.eq(BigNumber.from(2))
-        await expect(router.getAmountIn(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 3)).to.be.revertedWith(
+        expect(await router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(100), 30)).to.eq(BigNumber.from(2))
+        await expect(router.getAmountIn(BigNumber.from(0), BigNumber.from(100), BigNumber.from(100), 30)).to.be.revertedWith(
             'DeltaSwapLibrary: INSUFFICIENT_OUTPUT_AMOUNT'
         )
-        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(0), BigNumber.from(100), 3)).to.be.revertedWith(
+        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(0), BigNumber.from(100), 30)).to.be.revertedWith(
             'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
-        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(0), 3)).to.be.revertedWith(
+        await expect(router.getAmountIn(BigNumber.from(1), BigNumber.from(100), BigNumber.from(0), 30)).to.be.revertedWith(
             'DeltaSwapLibrary: INSUFFICIENT_LIQUIDITY'
         )
     })

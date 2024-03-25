@@ -231,9 +231,9 @@ describe('DeltaSwapPair', () => {
         await mineBlock(provider, blockTimestamp + 20)
         await pair.sync(overrides)
 
-        const lpReserves = await pair.getLPReserves();
-        const newPrice = encodePrice(lpReserves._reserve0, lpReserves._reserve1) // price is still 6 but reserves are different because of yield streaming
-        expect(lpReserves._reserve0.mul(expandTo18Decimals(2))).to.eq(lpReserves._reserve1.mul(expandTo18Decimals(6)));
+        const reserves = await pair.getReserves();
+        const newPrice = encodePrice(reserves._reserve0, reserves._reserve1) // price is still 6 but reserves are different because of yield streaming
+        expect(reserves._reserve0.mul(expandTo18Decimals(2))).to.eq(reserves._reserve1.mul(expandTo18Decimals(6)));
         expect(await pair.price0CumulativeLast()).to.eq(initialPrice[0].mul(11).add(newPrice[0].mul(10)))
         expect(await pair.price1CumulativeLast()).to.eq(initialPrice[1].mul(11).add(newPrice[1].mul(10)))
         expect((await pair.getReserves())[2]).to.eq(blockTimestamp + 21)
@@ -317,20 +317,20 @@ describe('DeltaSwapPair', () => {
         await token1.transfer(pair.address, swapAmount)
         await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
 
-        await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 12*60*60) // 12 hours passed
+        await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 4*60*60) // 4 hours passed
 
         const expectedLiquidity = expandTo18Decimals(1000)
         await pair.transfer(pair.address, expectedLiquidity.sub(MINIMUM_LIQUIDITY))
         await pair.burn(wallet.address, overrides)
 
         // There's more liquidity in the pool because a full day hasn't passed by yet.
-        // 24 hours have to pass for all the fee to be earned.
-        expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY.add('124881108856439'))
-        expect(await pair.balanceOf(other.address)).to.eq('124881108856439')
+        // 8 hours have to pass for all the fee to be earned.
+        expect(await pair.totalSupply()).to.eq(MINIMUM_LIQUIDITY.add('124892671379551'))
+        expect(await pair.balanceOf(other.address)).to.eq('124892671379551')
 
         // using 1000 here instead of the symbolic MINIMUM_LIQUIDITY because the amounts only happen to be equal...
         // ...because the initial liquidity amounts were equal
-        expect(await token0.balanceOf(pair.address)).to.eq(BigNumber.from(1000).add('873227015431372'))
-        expect(await token1.balanceOf(pair.address)).to.eq(BigNumber.from(1000).add('874971720388524'))
+        expect(await token0.balanceOf(pair.address)).to.eq(BigNumber.from(1000).add('873169260411997'))
+        expect(await token1.balanceOf(pair.address)).to.eq(BigNumber.from(1000).add('874913849974795'))
     })
 })

@@ -20,10 +20,10 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     address public override token1;
 
     address public override gammaPool;
-    uint24 private gsFee = 300; // GammaPool swap fee
-    uint24 private dsFee = 300; // Fee on large trades
+    uint24 private gsFee = 30; // GammaPool swap fee
+    uint24 private dsFee = 30; // Fee on large trades
     uint24 private dsFeeThreshold = 2000; // TODO: Change this to much lower, currently >2% of Liq trades pay fee.
-    uint24 private yieldPeriod = 86400; // TODO: change this to 8 hours in seconds
+    uint24 private yieldPeriod = 28800; // 8 hours in seconds
 
     uint112 public override rootK0;
     uint112 private liquidityEMA;
@@ -330,9 +330,9 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             } else {
                 fee = gsFee;
             }
-            uint256 balance0Adjusted = balance0 * 100000 - amount0In * fee;
-            uint256 balance1Adjusted = balance1 * 100000 - amount1In * fee;
-            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (100000**2), 'DeltaSwap: K');
+            uint256 balance0Adjusted = balance0 * 10000 - amount0In * fee;
+            uint256 balance1Adjusted = balance1 * 10000 - amount1In * fee;
+            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (10000**2), 'DeltaSwap: K');
         }
 
         _update(balance0, balance1, _reserve0, _reserve1, 0, 0, false);
