@@ -69,15 +69,19 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
-        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * dsFactory.dsFeeThreshold() / 100000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
-            assertEq(fee,dsFactory.dsFee());
+        (,, uint24 _dsFee, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
+        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * _dsFeeThreshold / 100000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
+            assertEq(fee,_dsFee);
         } else {
             assertEq(fee,0);
         }
     }
 
     function testMultiDayStream() public {
-        dsFactory.setDSFeeThreshold(0);
+        {
+            (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+            dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 0, _yieldPeriod);
+        }
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -102,7 +106,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
         vm.warp(12*60*60 + 1);
 
-        /*(_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
+        (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
         (reserve0, reserve1,) = dsPair.getReserves();
         assertEq(_reserve0, reserve0);
         assertEq(_reserve1, reserve1);
@@ -110,38 +114,36 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertEq(_lpReserve0/10 - lpReserve0/10, 297038525896808/2);
         assertEq(_lpReserve1/10 - lpReserve1/10, 297038525896808/2);
 
-        console.log("px1a:",(_reserve1 * 1e18 / _reserve0));
-        console.log("px1b:",(_lpReserve1 * 1e18 / _lpReserve0));/**/
-
-        //IMPORTANT
         sell_wbtc(addr1, 1e18);
         buy_wbtc(addr1, 1e18 - 2970386129930623); // gets price back to 1 at higher liquidity
 
         (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
         (_reserve0, _reserve1,) = dsPair.getReserves();
         _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
-
-        console.log("px2a:",(_reserve1 * 1e18 / _reserve0));
-        console.log("px2b:",(_lpReserve1 * 1e18 / _lpReserve0));
         assertEq(reserve1*1e18/reserve0,_reserve1*1e18/_reserve0); // price stays the same
 
         vm.warp(24*60*60 + 1);
 
-        //IMPORTANT
         (_lpReserve0, _lpReserve1,) = dsPair.getLPReserves();
-        //assertGt(_reserve0, reserve0);
-        //assertGt(_reserve1, reserve1);
+        assertGt(_reserve0, reserve0);
+        assertGt(_reserve1, reserve1);
 
-        console.log(_lpReserve0 - lpReserve0 - 2970385258968089);
+        uint256 earnedYield = 297038525896808/2;
+        uint256 remainingYield = 297038525896808/2; // remaining yield is combined with the additional yield
+        uint256 additionalYield = 297038612993062; // additional yield from new transaction
+        uint256 totalYield = earnedYield + (remainingYield + additionalYield) / 2; // total yield will be paid over next 24 hours
 
-        //assertEq(_lpReserve0, lpReserve0);
-        //assertEq(_lpReserve1, lpReserve1);
-        //assertGt(_lpReserve0/10 - lpReserve0/10, 297038525896808 + 297038525896808/2);
-        //assertGt(_lpReserve1/10 - lpReserve1/10, 297038525896808 + 297038525896808/2);
+        assertGt(_lpReserve0, lpReserve0);
+        assertGt(_lpReserve1, lpReserve1);
+        assertEq(_lpReserve0/10 - lpReserve0/10, totalYield);
+        assertEq(_lpReserve1/10 - lpReserve1/10, totalYield);
     }
 
     function testMintFeesEarned() public {
-        dsFactory.setDSFeeThreshold(0);
+        {
+            (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+            dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 0, _yieldPeriod);
+        }
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -208,7 +210,8 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testMintFeesUnearned() public {
-        dsFactory.setDSFeeThreshold(0);
+        (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 0, _yieldPeriod);
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -306,10 +309,12 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testTradingFeesThreshold() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setDSFeeThreshold(2100);
+        (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 2100, _yieldPeriod);
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFeeThreshold(), 2100);
+        (,,, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
+        assertEq(_dsFeeThreshold, 2100);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -620,10 +625,12 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testTradingDSFees() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setDSFee(10000); // fee is 10%
+        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, 10000, _dsFeeThreshold, _yieldPeriod);// fee is 10%
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFee(), 10000);
+        (,,_dsFee,,) = dsPair.getFeeParameters();
+        assertEq(_dsFee, 10000);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -649,37 +656,41 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testDSFeesThresholdForbidden() public {
-        uint16 dsFeeThreshold = dsFactory.dsFeeThreshold();
-        assertNotEq(dsFeeThreshold, 21);
+        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        assertNotEq(_dsFeeThreshold, 21);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsFactory.setDSFeeThreshold(21);
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 21, _yieldPeriod);
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFeeThreshold(), dsFeeThreshold);
+        (,, , uint24 dsFeeThreshold,) = dsPair.getFeeParameters();
+        assertEq(_dsFeeThreshold, dsFeeThreshold);
     }
 
     function testDSFees() public {
-        assertEq(dsFactory.dsFee(), 300);
+        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        assertEq(_dsFee, 300);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setDSFee(50);
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, 50, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFee(), 50);
+        (,, _dsFee,,) = dsPair.getFeeParameters();
+        assertEq(_dsFee, 50);
     }
 
     function testDSFeesForbidden() public {
-        uint16 dsFee = dsFactory.dsFee();
-        assertNotEq(dsFee, 50);
+        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        assertNotEq(_dsFee, 50);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsFactory.setDSFee(50);
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, 5, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        assertEq(dsFactory.dsFee(), dsFee);
+        (,, uint24 dsFee,,) = dsPair.getFeeParameters();
+        assertEq(_dsFee, dsFee);
     }
 
     function testSetGammaPoolSetter() public {
@@ -733,25 +744,28 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     }
 
     function testSetGSFee() public {
-        assertEq(dsFactory.gsFee(), 300);
+        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        assertEq(_gsFee, 300);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setGSFee(5);
+        dsFactory.setFeeParameters(address(dsPair), 5, _dsFee, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        assertEq(dsFactory.gsFee(), 5);
+        (,_gsFee,,,) = dsPair.getFeeParameters();
+        assertEq(_gsFee, 5);
     }
 
     function testSetGSFeeError() public {
-        uint256 gsFee = dsFactory.gsFee();
-        assertNotEq(gsFee, 5);
+        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        assertNotEq(_gsFee, 5);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsFactory.setGSFee(5);
+        dsFactory.setFeeParameters(address(dsPair), 50, _dsFee, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        assertEq(dsFactory.gsFee(), gsFee);
+        (,uint24 gsFee,,,) = dsPair.getFeeParameters();
+        assertEq(_gsFee, gsFee);
     }
 
     function testTradingFeesGS() public {

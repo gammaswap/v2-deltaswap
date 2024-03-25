@@ -100,8 +100,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external override {
         require(msg.sender == factory, 'DeltaSwap: FORBIDDEN');
         require(_yieldPeriod > 0 && _yieldPeriod <= 86400, 'DeltaSwap: YIELD_PERIOD');
-        gsFee = gsFee;
-        dsFee = gsFee;
+        gsFee = _gsFee;
+        dsFee = _dsFee;
         dsFeeThreshold = _dsFeeThreshold;
         yieldPeriod = _yieldPeriod;
     }
