@@ -180,7 +180,7 @@ describe('ExampleSlidingWindowOracle', () => {
         it('gas for first update (allocates empty array)', async () => {
             const tx = await slidingWindowOracle.update(token0.address, token1.address, overrides)
             const receipt = await tx.wait()
-            expect(receipt.gasUsed).to.eq('134533')
+            expect(receipt.gasUsed).to.eq('134545')
         }).retries(2) // gas test inconsistent
 
         it('gas for second update in the same period (skips)', async () => {

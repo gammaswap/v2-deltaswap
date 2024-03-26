@@ -22,7 +22,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     address public override gammaPool;
     uint24 private gsFee = 30; // GammaPool swap fee
     uint24 private dsFee = 30; // Fee on large trades
-    uint24 private dsFeeThreshold = 2000000; // TODO: Change this to much lower, currently >2% of Liq trades pay fee.
+    uint24 private dsFeeThreshold = 3000; // 0.003% of liquidity
     uint24 private yieldPeriod = 28800; // 8 hours in seconds
 
     uint112 public override rootK0;

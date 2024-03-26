@@ -78,4 +78,9 @@ contract DeltaSwapSetup is Test {
         dsPair.approve(address(dsRouter), type(uint256).max);
         vm.stopPrank();
     }
+
+    function updateDSFeeThreshold(uint24 dsFeeThreshold) public {
+        (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, dsFeeThreshold, _yieldPeriod);
+    }
 }

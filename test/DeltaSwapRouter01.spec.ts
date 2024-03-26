@@ -371,7 +371,7 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 150859,
+                            [RouterVersion.DeltaSwapRouter01]: 150871,
                             [RouterVersion.DeltaSwapRouter02]: 150960
                         }[routerVersion as RouterVersion]
                     )
