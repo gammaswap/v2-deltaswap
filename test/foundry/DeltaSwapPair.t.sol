@@ -70,7 +70,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
         (,, uint24 _dsFee, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
-        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * _dsFeeThreshold / 1000000) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
+        if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * _dsFeeThreshold / 1e8) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
             assertEq(fee,_dsFee);
         } else {
             assertEq(fee,0);
@@ -310,11 +310,11 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
     function testTradingFeesThreshold() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
         (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 21000, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 2100000, _yieldPeriod);
         vm.stopPrank();
 
         (,,, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
-        assertEq(_dsFeeThreshold, 21000);
+        assertEq(_dsFeeThreshold, 2100000);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
         (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
@@ -657,11 +657,11 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function testDSFeesThresholdForbidden() public {
         (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        assertNotEq(_dsFeeThreshold, 210);
+        assertNotEq(_dsFeeThreshold, 21000);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwap: FORBIDDEN");
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 210, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 21000, _yieldPeriod);
         vm.stopPrank();
 
         (,, , uint24 dsFeeThreshold,) = dsPair.getFeeParameters();
