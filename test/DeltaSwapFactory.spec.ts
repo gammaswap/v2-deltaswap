@@ -73,7 +73,7 @@ describe('DeltaSwapFactory', () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(2684872)
+        expect(receipt.gasUsed).to.eq(2635904)
     })
 
     it('setFeeTo', async () => {

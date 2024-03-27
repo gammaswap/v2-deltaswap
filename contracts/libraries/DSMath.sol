@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.16;
 
-// a library for performing various math operations
-
+/// @title Math library for DeltaSwap
+/// @author Daniel D. Alcarraz (https://github.com/0xDanr)
+/// @notice Math library for DeltaSwap
 library DSMath {
 
     function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -13,27 +14,36 @@ library DSMath {
         z = x < y ? x : y;
     }
 
-    function sqrt(uint256 x) internal pure returns (uint256) {
-        if (x == 0) return 0;
-        else{
-            uint256 xx = x;
-            uint256 r = 1;
-            if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
-            if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
-            if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
-            if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
-            if (xx >= 0x100) { xx >>= 8; r <<= 4; }
-            if (xx >= 0x10) { xx >>= 4; r <<= 2; }
-            if (xx >= 0x8) { r <<= 1; }
-            r = (r + x / r) >> 1;
-            r = (r + x / r) >> 1;
-            r = (r + x / r) >> 1;
-            r = (r + x / r) >> 1;
-            r = (r + x / r) >> 1;
-            r = (r + x / r) >> 1;
-            r = (r + x / r) >> 1;
-            uint256 r1 = x / r;
-            return uint128 (r < r1 ? r : r1);
+    /// @dev Returns the square root of `a`.
+    /// @param a number to square root
+    /// @return z square root of a
+    function sqrt(uint256 a) internal pure returns (uint256 z) {
+        if (a == 0) return 0;
+
+        assembly {
+            z := 181 // Should be 1, but this saves a multiplication later.
+
+            let r := shl(7, lt(0xffffffffffffffffffffffffffffffffff, a))
+            r := or(shl(6, lt(0xffffffffffffffffff, shr(r, a))), r)
+            r := or(shl(5, lt(0xffffffffff, shr(r, a))), r)
+            r := or(shl(4, lt(0xffffff, shr(r, a))), r)
+            z := shl(shr(1, r), z)
+
+            // Doesn't overflow since y < 2**136 after above.
+            z := shr(18, mul(z, add(shr(r, a), 65536))) // A mul() saved from z = 181.
+
+            // Given worst case multiplicative error of 2.84 above, 7 iterations should be enough.
+            z := shr(1, add(div(a, z), z))
+            z := shr(1, add(div(a, z), z))
+            z := shr(1, add(div(a, z), z))
+            z := shr(1, add(div(a, z), z))
+            z := shr(1, add(div(a, z), z))
+            z := shr(1, add(div(a, z), z))
+            z := shr(1, add(div(a, z), z))
+
+            // If x+1 is a perfect square, the Babylonian method cycles between floor(sqrt(x)) and ceil(sqrt(x)).
+            // We always return floor. Source https://en.wikipedia.org/wiki/Integer_square_root#Using_only_integer_division
+            z := sub(z, lt(div(a, z), z))
         }
     }
 

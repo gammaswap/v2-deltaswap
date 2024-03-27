@@ -9,6 +9,9 @@ import './interfaces/IDeltaSwapFactory.sol';
 import './interfaces/IDeltaSwapCallee.sol';
 import './DeltaSwapERC20.sol';
 
+/// @title DeltaSwapPair contract
+/// @author Daniel D. Alcarraz (https://github.com/0xDanr)
+/// @notice x*y=k AMM implementation that streams fee yield to LPs and charges fees for swaps above a certain threshold
 contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     using UQ112x112 for uint224;
 

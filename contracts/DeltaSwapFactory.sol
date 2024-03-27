@@ -7,6 +7,10 @@ import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './DeltaSwapPair.sol';
 
+/// @title DeltaSwapFactory contract
+/// @author Daniel D. Alcarraz (https://github.com/0xDanr)
+/// @notice Factory contract to create DeltaSwapPairs.
+/// @dev All DeltaSwapPair contracts are unique by token pair
 contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeTo;
     uint16 public override feeNum = 5000; // GammaPool swap fee
