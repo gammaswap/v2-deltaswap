@@ -51,7 +51,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
     function withdrawLiquidityFromCFMM(address addr, uint256 liquidity) public {
         vm.startPrank(addr);
-        removeLiquidity(address(usdc), address(wbtc), liquidity); // 1 wbtc = 1 USDC
+        removeLiquidity(address(usdc), address(wbtc), liquidity, addr); // 1 wbtc = 1 USDC
         vm.stopPrank();
     }
 
@@ -74,6 +74,98 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
             assertEq(fee,_dsFee);
         } else {
             assertEq(fee,0);
+        }
+    }
+
+    function testMintBurnStaticPrice(uint16 timePassed, uint72 withdrawAmt) public {
+        timePassed = uint8(bound(timePassed, 2, 30000));
+        withdrawAmt = uint72(bound(withdrawAmt, 1000, 99*1e18));
+        updateDSFeeThreshold(0);
+        depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
+        (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 100*1e18);
+        assertEq(reserve1, 100*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+
+        sell_wbtc(addr1, 1e18);
+        buy_wbtc(addr1, 1e18 - 2970385258968089); // gets price back to 1 at higher liquidity
+
+        {
+            (uint256 _lpReserve0, uint256 _lpReserve1,) = dsPair.getLPReserves();
+            (uint256 _reserve0, uint256 _reserve1,) = dsPair.getReserves();
+            uint256 _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
+            assertEq(reserve1*_reserve0,reserve0*_reserve1); // price stays the same
+
+            assertGt(_reserve0, reserve0);
+            assertGt(_reserve1, reserve1);
+            assertGt(_liquidity, liquidity);
+            assertEq(_lpReserve0/10, lpReserve0/10); // rounding error at the last decimal
+            assertEq(_lpReserve1/10, lpReserve1/10); // rounding error at the last decimal
+        }
+
+        vm.warp(timePassed);
+
+        for(uint256 i = 0; i < 50; i++) {
+            uint256 dsBal0 = dsPair.balanceOf(addr1);
+            uint256 usdcBal0 = usdc.balanceOf(addr1);
+            uint256 wbtcBal0 = wbtc.balanceOf(addr1);
+            withdrawLiquidityFromCFMM(addr1, withdrawAmt);
+
+            uint256 usdcBal1 = usdc.balanceOf(addr1);
+            uint256 wbtcBal1 = wbtc.balanceOf(addr1);
+
+            depositLiquidityInCFMM(addr1, usdcBal1 - usdcBal0, wbtcBal1 - wbtcBal0);
+            uint256 dsBal1 = dsPair.balanceOf(addr1);
+            assertGe(dsBal0, dsBal1);
+            assertApproxEqRel(dsBal0, dsBal1, 10);
+        }
+    }
+
+    function testMintBurnMovingPrice(uint8 tradeAmt, uint16 timePassed, uint72 withdrawAmt) public {
+        tradeAmt = uint8(bound(tradeAmt, 1, type(uint8).max));
+        timePassed = uint8(bound(timePassed, 2, 30000));
+        withdrawAmt = uint72(bound(withdrawAmt, 1000, 999*1e18));
+        updateDSFeeThreshold(0);
+        depositLiquidityInCFMM(addr1, 1000*1e18, 1000*1e18);
+        (uint256 lpReserve0, uint256 lpReserve1,) = dsPair.getLPReserves();
+        (uint256 reserve0, uint256 reserve1,) = dsPair.getReserves();
+        assertEq(reserve0, 1000*1e18);
+        assertEq(reserve1, 1000*1e18);
+
+        uint256 liquidity = DSMath.sqrt(reserve0 * reserve1);
+        uint256 lpLiquidity = DSMath.sqrt(lpReserve0 * lpReserve1);
+        assertEq(liquidity, lpLiquidity);
+
+        sell_wbtc(addr1, uint256(tradeAmt)*1e18);
+
+        uint256 _liquidity;
+        uint256 _lpLiquidity;
+        {
+            (uint256 _lpReserve0, uint256 _lpReserve1,) = dsPair.getLPReserves();
+            (uint256 _reserve0, uint256 _reserve1,) = dsPair.getReserves();
+            _liquidity = DSMath.sqrt(_reserve0 * _reserve1);
+            _lpLiquidity = DSMath.sqrt(_lpReserve0 * _lpReserve1);
+        }
+        assertGt(_liquidity, liquidity);
+        assertApproxEqAbs(_lpLiquidity, lpLiquidity,1e1);
+
+        vm.warp(timePassed);
+
+        for(uint256 i = 0; i < 50; i++) {
+            uint256 dsBal0 = dsPair.balanceOf(addr1);
+            uint256 usdcBal0 = usdc.balanceOf(addr1);
+            uint256 wbtcBal0 = wbtc.balanceOf(addr1);
+            withdrawLiquidityFromCFMM(addr1, withdrawAmt);
+
+            uint256 usdcBal1 = usdc.balanceOf(addr1);
+            uint256 wbtcBal1 = wbtc.balanceOf(addr1);
+
+            depositLiquidityInCFMM(addr1, usdcBal1 - usdcBal0, wbtcBal1 - wbtcBal0);
+            uint256 dsBal1 = dsPair.balanceOf(addr1);
+            assertGe(dsBal0, dsBal1);
+            assertApproxEqRel(dsBal0, dsBal1, 10);
         }
     }
 

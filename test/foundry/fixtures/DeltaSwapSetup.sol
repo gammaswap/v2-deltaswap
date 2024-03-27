@@ -46,8 +46,8 @@ contract DeltaSwapSetup is Test {
         (amountA, amountB, liquidity) = dsRouter.addLiquidity(token0, token1, amount0, amount1, 0, 0, to, type(uint256).max);
     }
 
-    function removeLiquidity(address token0, address token1, uint256 liquidity) public returns (uint256 amount0, uint256 amount1) {
-        return dsRouter.removeLiquidity(token0, token1, liquidity, 0, 0, msg.sender, type(uint256).max);
+    function removeLiquidity(address token0, address token1, uint256 liquidity, address addr) public returns (uint256 amount0, uint256 amount1) {
+        return dsRouter.removeLiquidity(token0, token1, liquidity, 0, 0, addr, type(uint256).max);
     }
 
     function buyTokenOut(uint256 amountOut, address tokenIn, address tokenOut, address to) public returns(uint256[] memory amounts) {
