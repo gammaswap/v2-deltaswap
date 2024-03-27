@@ -62,7 +62,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         uint32 _blockTimestampLast;
         (_reserve0, _reserve1, _blockTimestampLast) = getReserves();
         uint256 _rootK0 = rootK0;
-        uint256 _rootK1 = DSMath.sqrt(uint256(_reserve0)*reserve1);
+        uint256 _rootK1 = DSMath.sqrt(uint256(_reserve0)*_reserve1);
         if(_rootK1 == 0) { // no deposits yet
             return(0, 0, 0);
         }
@@ -102,7 +102,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
     function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external override {
         require(msg.sender == factory, 'DeltaSwap: FORBIDDEN');
-        require(_yieldPeriod > 0 && _yieldPeriod <= 86400, 'DeltaSwap: YIELD_PERIOD');
+        require(_yieldPeriod > 0, 'DeltaSwap: YIELD_PERIOD');
         gsFee = _gsFee;
         dsFee = _dsFee;
         dsFeeThreshold = _dsFeeThreshold;
@@ -143,7 +143,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), _liquidityEMA, DSMath.max(block.number - _lastLiquidityBlockNumber, 10)));
             lastLiquidityBlockNumber = uint32(block.number);
         }
-        (_reserve0, _reserve1,) = getLPReserves(); // gas savings
+        (_reserve0, _reserve1,) = getLPReserves();
         if(isDeposit) {
             _reserve0 += amount0;
             _reserve1 += amount1;
