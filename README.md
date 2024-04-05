@@ -5,12 +5,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gammaswap/v1-deltaswap/actions/workflows/main.yml">
-    <img src="https://github.com/gammaswap/v1-deltaswap/actions/workflows/main.yml/badge.svg?branch=main" alt="Compile/Test/Publish">
+  <a href="https://github.com/gammaswap/v2-deltaswap/actions/workflows/main.yml">
+    <img src="https://github.com/gammaswap/v2-deltaswap/actions/workflows/main.yml/badge.svg?branch=main" alt="Compile/Test/Publish">
   </a>
 </p>
 
-<h1 align="center">V1-DeltaSwap</h1>
+<h1 align="center">V2-DeltaSwap</h1>
 
 ## Description
 DeltaSwap is an AMM that employes the constant product market maker formula used by UniswapV2 but without or low trading fees on transactions with low market impact
