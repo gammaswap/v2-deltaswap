@@ -9,6 +9,9 @@ import './interfaces/IDeltaSwapFactory.sol';
 import './interfaces/IDeltaSwapCallee.sol';
 import './DeltaSwapERC20.sol';
 
+/// @title DeltaSwapPair contract
+/// @author Daniel D. Alcarraz (https://github.com/0xDanr)
+/// @notice x*y=k AMM implementation that streams fee yield to LPs and charges fees for swaps above a certain threshold
 contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     using UQ112x112 for uint224;
 
@@ -20,7 +23,12 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     address public override token1;
 
     address public override gammaPool;
+    uint24 private gsFee = 30; // GammaPool swap fee
+    uint24 private dsFee = 30; // Fee on large trades
+    uint24 private dsFeeThreshold = 3000; // 0.003% of liquidity
+    uint24 private yieldPeriod = 28800; // 8 hours in seconds
 
+    uint112 public override rootK0;
     uint112 private liquidityEMA;
     uint32 private lastLiquidityBlockNumber;
 
@@ -50,6 +58,32 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         _blockTimestampLast = blockTimestampLast;
     }
 
+    function getLPReserves() public override view returns (uint112 _reserve0, uint112 _reserve1, uint256 _rate) {
+        uint32 _blockTimestampLast;
+        (_reserve0, _reserve1, _blockTimestampLast) = getReserves();
+        uint256 _rootK0 = rootK0;
+        uint256 _rootK1 = DSMath.sqrt(uint256(_reserve0)*_reserve1);
+        if(_rootK1 == 0) { // no deposits yet
+            return(0, 0, 0);
+        }
+
+        uint32 blockTimestamp = uint32(block.timestamp % 2**32);
+        uint32 timeElapsed;
+        unchecked {
+            timeElapsed = blockTimestamp - _blockTimestampLast; // overflow is desired
+        }
+
+        if(timeElapsed > 0 && _rootK0 > 0 && _rootK1 > _rootK0) {
+            uint32 _yieldPeriod = yieldPeriod; // save gas
+            timeElapsed = uint32(DSMath.min(timeElapsed, _yieldPeriod));
+            _rootK0 = _rootK0 + (_rootK1 - _rootK0) * timeElapsed / _yieldPeriod; // 1 day in seconds
+            _rate = _yieldPeriod > timeElapsed ? (_rootK1 - _rootK0) * 1e18 / (_yieldPeriod - timeElapsed) : 0;
+        }
+
+        _reserve0 = uint112(_reserve0 * _rootK0 / _rootK1);
+        _reserve1 = uint112(_reserve1 * _rootK0 / _rootK1);
+    }
+
     function _safeTransfer(address token, address to, uint256 value) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'DeltaSwap: TRANSFER_FAILED');
@@ -66,6 +100,23 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         token1 = _token1;
     }
 
+    function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external override {
+        require(msg.sender == factory, 'DeltaSwap: FORBIDDEN');
+        require(_yieldPeriod > 0, 'DeltaSwap: YIELD_PERIOD');
+        gsFee = _gsFee;
+        dsFee = _dsFee;
+        dsFeeThreshold = _dsFeeThreshold;
+        yieldPeriod = _yieldPeriod;
+    }
+
+    function getFeeParameters() external view returns(address _gammaPool, uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) {
+        _gammaPool = gammaPool;
+        _gsFee = gsFee;
+        _dsFee = dsFee;
+        _dsFeeThreshold = dsFeeThreshold;
+        _yieldPeriod = yieldPeriod;
+    }
+
     // called by the factory after deployment
     function setGammaPool(address pool) external override {
         require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
@@ -73,7 +124,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     // update reserves and, on the first call per block, price accumulators
-    function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
+    function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1, uint112 amount0, uint112 amount1, bool isDeposit) private returns(uint112,uint112) {
         require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'DeltaSwap: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed;
@@ -92,10 +143,21 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
             liquidityEMA = uint112(DSMath.calcEMA(DSMath.sqrt(balance0 * balance1), _liquidityEMA, DSMath.max(block.number - _lastLiquidityBlockNumber, 10)));
             lastLiquidityBlockNumber = uint32(block.number);
         }
+        (_reserve0, _reserve1,) = getLPReserves();
+        if(isDeposit) {
+            _reserve0 += amount0;
+            _reserve1 += amount1;
+        } else {
+            _reserve0 -= amount0;
+            _reserve1 -= amount1;
+        }
+        uint256 _rootK1 = DSMath.sqrt(balance0*balance1);
+        rootK0 = uint112(DSMath.min(DSMath.sqrt(uint256(_reserve0)*_reserve1) + 1, _rootK1)); // +1 because square root formula rounds down
         reserve0 = uint112(balance0);
         reserve1 = uint112(balance1);
         blockTimestampLast = blockTimestamp;
         emit Sync(reserve0, reserve1);
+        return(_reserve0, _reserve1);
     }
 
     function _updateLiquidityTradedEMA(uint256 tradeLiquidity) internal virtual returns(uint256 _tradeLiquidityEMA) {
@@ -116,8 +178,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
     }
 
     function calcTradingFee(uint256 tradeLiquidity, uint256 lastLiquidityTradedEMA, uint256 lastLiquidityEMA) public virtual override view returns(uint256) {
-        (uint16 dsFee, uint16 dsFeeThreshold) = IDeltaSwapFactory(factory).dsFeeInfo();
-        if(dsFee > 0 && DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= lastLiquidityEMA * dsFeeThreshold / 100000) { // if trade >= threshold, charge fee
+        if(dsFee > 0 && DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= lastLiquidityEMA * dsFeeThreshold / 1e8) { // if trade >= threshold, charge fee
             return dsFee;
         }
         return 0;
@@ -201,6 +262,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
+        (_reserve0, _reserve1,) = getLPReserves(); // gas savings
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         if (_totalSupply == 0) {
@@ -212,14 +274,14 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         require(liquidity > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
 
-        _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint256(reserve0) * reserve1; // reserve0 and reserve1 are up-to-date
+        (_reserve0, _reserve1) = _update(balance0, balance1, reserve0, reserve1, uint112(amount0), uint112(amount1), true);
+        if (feeOn) kLast = (uint256(_reserve0)* _reserve1); // reserve0 and reserve1 are up-to-date
         emit Mint(msg.sender, amount0, amount1);
     }
 
     // this low-level function should be called from a contract which performs important safety checks
     function burn(address to) external override lock returns (uint256 amount0, uint256 amount1) {
-        (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
+        (uint112 _reserve0, uint112 _reserve1,) = getLPReserves(); // gas savings
         address _token0 = token0;                                // gas savings
         address _token1 = token1;                                // gas savings
         uint256 balance0 = IERC20(_token0).balanceOf(address(this));
@@ -228,8 +290,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
-        amount0 = liquidity * balance0 / _totalSupply; // using balances ensures pro-rata distribution
-        amount1 = liquidity * balance1 / _totalSupply; // using balances ensures pro-rata distribution
+        amount0 = liquidity * _reserve0 / _totalSupply; // using balances ensures pro-rata distribution
+        amount1 = liquidity * _reserve1 / _totalSupply; // using balances ensures pro-rata distribution
         require(amount0 > 0 && amount1 > 0, 'DeltaSwap: INSUFFICIENT_LIQUIDITY_BURNED');
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
@@ -237,8 +299,8 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         balance0 = IERC20(_token0).balanceOf(address(this));
         balance1 = IERC20(_token1).balanceOf(address(this));
 
-        _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint256(reserve0) * reserve1; // reserve0 and reserve1 are up-to-date
+        (_reserve0, _reserve1) = _update(balance0, balance1, reserve0, reserve1, uint112(amount0), uint112(amount1), false);
+        if (feeOn) kLast = (uint256(_reserve0) * _reserve1); // reserve0 and reserve1 are up-to-date
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
@@ -269,14 +331,14 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
                 uint256 tradeLiquidity = DSMath.calcTradeLiquidity(amount0In, amount1In, _reserve0, _reserve1);
                 fee = calcTradingFee(tradeLiquidity, _updateLiquidityTradedEMA(tradeLiquidity), liquidityEMA);
             } else {
-                fee = IDeltaSwapFactory(factory).gsFee();
+                fee = gsFee;
             }
-            uint256 balance0Adjusted = balance0 * 100000 - amount0In * fee;
-            uint256 balance1Adjusted = balance1 * 100000 - amount1In * fee;
-            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (100000**2), 'DeltaSwap: K');
+            uint256 balance0Adjusted = balance0 * 10000 - amount0In * fee;
+            uint256 balance1Adjusted = balance1 * 10000 - amount1In * fee;
+            require(balance0Adjusted * balance1Adjusted >= uint256(_reserve0) * _reserve1 * (10000**2), 'DeltaSwap: K');
         }
 
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(balance0, balance1, _reserve0, _reserve1, 0, 0, false);
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
 
@@ -290,6 +352,7 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
 
     // force reserves to match balances
     function sync() external override lock {
-        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
+        (uint112 _reserve0, uint112 _reserve1,) = getReserves();
+        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), _reserve0, _reserve1, 0, 0, false);
     }
 }

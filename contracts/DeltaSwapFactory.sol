@@ -7,16 +7,16 @@ import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './DeltaSwapPair.sol';
 
+/// @title DeltaSwapFactory contract
+/// @author Daniel D. Alcarraz (https://github.com/0xDanr)
+/// @notice Factory contract to create DeltaSwapPairs.
+/// @dev All DeltaSwapPair contracts are unique by token pair
 contract DeltaSwapFactory is IDeltaSwapFactory {
     address public override feeTo;
     uint16 public override feeNum = 5000; // GammaPool swap fee
     address public override feeToSetter;
     address public override gammaPoolSetter;
     address public override gsFactory;
-
-    uint16 public override gsFee = 300; // GammaPool swap fee
-    uint16 public override dsFee = 300; // Fee on large trades
-    uint16 public override dsFeeThreshold = 2000; // >2% of Liq trades pay fee.
 
     mapping(address => mapping(address => address)) public override getPair;
     address[] public override allPairs;
@@ -67,27 +67,13 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         feeToSetter = _feeToSetter;
     }
 
-    function setGSFee(uint16 fee) external override {
+    function setFeeParameters(address pair, uint24 gsFee, uint24 dsFee, uint24 dsFeeThreshold, uint24 yieldPeriod) external override {
         require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
-        gsFee = fee;
-    }
-
-    function setDSFee(uint16 fee) external override {
-        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
-        dsFee = fee;
-    }
-
-    function setDSFeeThreshold(uint16 feeThreshold) external override {
-        require(msg.sender == feeToSetter, 'DeltaSwap: FORBIDDEN');
-        dsFeeThreshold = feeThreshold;
+        IDeltaSwapPair(pair).setFeeParameters(gsFee, dsFee, dsFeeThreshold, yieldPeriod);
     }
 
     function feeInfo() external override view returns (address,uint16) {
         return(feeTo, feeNum);
-    }
-
-    function dsFeeInfo() external override view returns (uint16,uint16) {
-        return(dsFee, dsFeeThreshold);
     }
 
     function setGSProtocolId(uint16 protocolId) external override {

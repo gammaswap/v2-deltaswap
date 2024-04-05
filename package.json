@@ -1,7 +1,7 @@
 {
-  "name": "@gammaswap/v1-deltaswap",
-  "version": "0.9.0",
-  "description": "GammaSwap feeless spot DEX",
+  "name": "@gammaswap/v2-deltaswap",
+  "version": "0.10.0",
+  "description": "GammaSwap feeless and yield streaming spot DEX",
   "main": "index.js",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/@gammaswap"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gammaswap/v1-deltaswap"
+    "url": "https://github.com/gammaswap/v2-deltaswap"
   },
   "files": [
     "artifacts",
@@ -63,6 +63,6 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@gammaswap/v1-core": "^1.2.1"
+    "@gammaswap/v1-core": "^1.2.2"
   }
 }

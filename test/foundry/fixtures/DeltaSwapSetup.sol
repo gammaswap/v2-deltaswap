@@ -46,15 +46,15 @@ contract DeltaSwapSetup is Test {
         (amountA, amountB, liquidity) = dsRouter.addLiquidity(token0, token1, amount0, amount1, 0, 0, to, type(uint256).max);
     }
 
-    function removeLiquidity(address token0, address token1, uint256 liquidity) public returns (uint256 amount0, uint256 amount1) {
-        return dsRouter.removeLiquidity(token0, token1, liquidity, 0, 0, msg.sender, type(uint256).max);
+    function removeLiquidity(address token0, address token1, uint256 liquidity, address addr) public returns (uint256 amount0, uint256 amount1) {
+        return dsRouter.removeLiquidity(token0, token1, liquidity, 0, 0, addr, type(uint256).max);
     }
 
-    function buyTokenOut(uint256 amountOut, address tokenIn, address tokenOut) public returns(uint256[] memory amounts) {
+    function buyTokenOut(uint256 amountOut, address tokenIn, address tokenOut, address to) public returns(uint256[] memory amounts) {
         address[] memory path = new address[](2);
         path[0] = tokenIn;
         path[1] = tokenOut;
-        return dsRouter.swapTokensForExactTokens(amountOut, type(uint256).max, path, msg.sender, type(uint256).max);
+        return dsRouter.swapTokensForExactTokens(amountOut, type(uint256).max, path, to, type(uint256).max);
     }
 
     function sellTokenIn(uint256 amountIn, address tokenIn, address tokenOut, address to) public returns(uint256[] memory amounts) {
@@ -77,5 +77,10 @@ contract DeltaSwapSetup is Test {
         }
         dsPair.approve(address(dsRouter), type(uint256).max);
         vm.stopPrank();
+    }
+
+    function updateDSFeeThreshold(uint24 dsFeeThreshold) public {
+        (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, dsFeeThreshold, _yieldPeriod);
     }
 }
