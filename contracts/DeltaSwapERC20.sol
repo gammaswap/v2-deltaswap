@@ -2,19 +2,15 @@
 pragma solidity =0.8.21;
 
 import './interfaces/IDeltaSwapERC20.sol';
+import "./storage/AppStorage.sol";
 
-contract DeltaSwapERC20 is IDeltaSwapERC20 {
-    string public constant override name = 'DeltaSwap V1';
-    string public constant override symbol = 'DS-V1';
+contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
+    string public constant override name = 'DeltaSwap V2';
+    string public constant override symbol = 'DS-V2';
     uint8 public constant override decimals = 18;
-    uint256  public override totalSupply;
-    mapping(address => uint256) public override balanceOf;
-    mapping(address => mapping(address => uint256)) public override allowance;
 
-    bytes32 public override DOMAIN_SEPARATOR;
-    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public immutable override DOMAIN_SEPARATOR;
     bytes32 public constant override PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-    mapping(address => uint256) public override nonces;
 
     constructor() {
         uint256 chainId;
@@ -32,26 +28,42 @@ contract DeltaSwapERC20 is IDeltaSwapERC20 {
         );
     }
 
+    function totalSupply() external override view returns (uint256) {
+        return s.totalSupply;
+    }
+
+    function balanceOf(address owner) external override view returns (uint256) {
+        return s.balanceOf[owner];
+    }
+
+    function allowance(address owner, address spender) external override view returns (uint256) {
+        return s.allowance[owner][spender];
+    }
+
+    function nonces(address owner) external override view returns (uint256) {
+        return s.nonces[owner];
+    }
+
     function _mint(address to, uint256 value) internal {
-        totalSupply = totalSupply + value;
-        balanceOf[to] = balanceOf[to] + value;
+        s.totalSupply = s.totalSupply + value;
+        s.balanceOf[to] = s.balanceOf[to] + value;
         emit Transfer(address(0), to, value);
     }
 
     function _burn(address from, uint256 value) internal {
-        balanceOf[from] = balanceOf[from]- value;
-        totalSupply = totalSupply - value;
+        s.balanceOf[from] = s.balanceOf[from]- value;
+        s.totalSupply = s.totalSupply - value;
         emit Transfer(from, address(0), value);
     }
 
     function _approve(address owner, address spender, uint256 value) private {
-        allowance[owner][spender] = value;
+        s.allowance[owner][spender] = value;
         emit Approval(owner, spender, value);
     }
 
     function _transfer(address from, address to, uint256 value) private {
-        balanceOf[from] = balanceOf[from] - value;
-        balanceOf[to] = balanceOf[to] + value;
+        s.balanceOf[from] = s.balanceOf[from] - value;
+        s.balanceOf[to] = s.balanceOf[to] + value;
         emit Transfer(from, to, value);
     }
 
@@ -66,23 +78,23 @@ contract DeltaSwapERC20 is IDeltaSwapERC20 {
     }
 
     function transferFrom(address from, address to, uint256 value) external override returns (bool) {
-        if (allowance[from][msg.sender] != type(uint256).max) {
-            allowance[from][msg.sender] -= value;
+        if (s.allowance[from][msg.sender] != type(uint256).max) {
+            s.allowance[from][msg.sender] -= value;
         }
         _transfer(from, to, value);
         return true;
     }
 
-    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 _v, bytes32 _r, bytes32 _s) external override {
         require(deadline >= block.timestamp, 'DeltaSwap: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, s.nonces[owner]++, deadline))
             )
         );
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = ecrecover(digest, _v, _r, _s);
         require(recoveredAddress != address(0) && recoveredAddress == owner, 'DeltaSwap: INVALID_SIGNATURE');
         _approve(owner, spender, value);
     }

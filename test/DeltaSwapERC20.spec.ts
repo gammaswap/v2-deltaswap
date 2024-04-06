@@ -22,8 +22,8 @@ describe('DeltaSwapERC20', () => {
 
     it('name, symbol, decimals, totalSupply, balanceOf, DOMAIN_SEPARATOR, PERMIT_TYPEHASH', async () => {
         const name = await token.name()
-        expect(name).to.eq('DeltaSwap V1')
-        expect(await token.symbol()).to.eq('DS-V1')
+        expect(name).to.eq('DeltaSwap V2')
+        expect(await token.symbol()).to.eq('DS-V2')
         expect(await token.decimals()).to.eq(18)
         expect(await token.totalSupply()).to.eq(TOTAL_SUPPLY)
         expect(await token.balanceOf(wallet.address)).to.eq(TOTAL_SUPPLY)
