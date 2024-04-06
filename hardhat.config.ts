@@ -19,12 +19,6 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
       evmVersion: "paris",
-      remappings: [
-        "ds-test/=lib/forge-std/lib/ds-test/src/",
-        "eth-gas-reporter/=eth-gas-reporter/",
-        "forge-std/=lib/forge-std/src/",
-        "hardhat/=hardhat/",
-      ]
     },
   },
   networks: {

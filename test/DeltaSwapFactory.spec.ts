@@ -21,17 +21,19 @@ const formatObject = (obj: any) => {
 
 describe('DeltaSwapFactory', () => {
     let DeltaSwapPair: any;
+    let DeltaSwapV2Proxy: any;
     let wallet: any;
     let other: any;
     let factory: Contract
 
     beforeEach(async () => {
         DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+        DeltaSwapV2Proxy = await ethers.getContractFactory("DeltaSwapV2Proxy");
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet);
         factory = fixture.factory
         //console.log('============', formatObject(config), formatObject(userConfig));
-        //console.log("initCodeHash >> ", utils.keccak256(DeltaSwapPair.bytecode).toString());
+        //console.log("initCodeHash >> ", utils.keccak256(DeltaSwapV2Proxy.bytecode).toString());
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
@@ -42,7 +44,7 @@ describe('DeltaSwapFactory', () => {
     })
 
     async function createPair(tokens: [string, string]) {
-        const bytecode = `${DeltaSwapPair.bytecode}`
+        const bytecode = `${DeltaSwapV2Proxy.bytecode}`
         const create2Address = getCreate2Address(factory.address, tokens, bytecode)
         await expect(factory.createPair(...tokens))
             .to.emit(factory, 'PairCreated')
@@ -73,7 +75,7 @@ describe('DeltaSwapFactory', () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(2643257)
+        expect(receipt.gasUsed).to.eq(337376) // 2643257
     })
 
     it('setFeeTo', async () => {

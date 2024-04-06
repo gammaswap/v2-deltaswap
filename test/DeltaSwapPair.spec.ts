@@ -172,7 +172,7 @@ describe('DeltaSwapPair', () => {
         await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
         const tx = await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(113055)
+        expect(receipt.gasUsed).to.eq(119064) // 113055
     })
 
     it('burn', async () => {

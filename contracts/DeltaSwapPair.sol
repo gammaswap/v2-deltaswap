@@ -87,14 +87,15 @@ contract DeltaSwapPair is DeltaSwapERC20, IDeltaSwapPair {
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'DeltaSwap: TRANSFER_FAILED');
     }
 
-    constructor() {
-        factory = msg.sender;
+    constructor(address _factory) {
+        factory = _factory;
     }
 
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1) external override {
         require(msg.sender == factory, 'DeltaSwap: FORBIDDEN'); // sufficient check
-        s.initialize(factory, _token0, _token1);
+        s.initialize(_token0, _token1);
+        _initializeDomainSeparator();
     }
 
     function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external override {

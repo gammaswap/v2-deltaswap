@@ -9,15 +9,19 @@ contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
     string public constant override symbol = 'DS-V2';
     uint8 public constant override decimals = 18;
 
-    bytes32 public immutable override DOMAIN_SEPARATOR;
     bytes32 public constant override PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
     constructor() {
+    }
+
+    function _initializeDomainSeparator() internal {
+        require(s.DOMAIN_SEPARATOR == bytes32(0), 'DeltaSwap: DOMAIN_SEPARATOR_INITIALIZED');
         uint256 chainId;
         assembly {
             chainId := chainid()
         }
-        DOMAIN_SEPARATOR = keccak256(
+
+        s.DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
                 keccak256(bytes(name)),
@@ -26,6 +30,10 @@ contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
                 address(this)
             )
         );
+    }
+
+    function DOMAIN_SEPARATOR() external override view returns (bytes32) {
+        return s.DOMAIN_SEPARATOR;
     }
 
     function totalSupply() external override view returns (uint256) {
@@ -90,7 +98,7 @@ contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
-                DOMAIN_SEPARATOR,
+                s.DOMAIN_SEPARATOR,
                 keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, s.nonces[owner]++, deadline))
             )
         );

@@ -5,6 +5,7 @@ import '../DeltaSwapERC20.sol';
 
 contract ERC20 is DeltaSwapERC20 {
     constructor(uint256 _totalSupply) {
+        _initializeDomainSeparator();
         _mint(msg.sender, _totalSupply);
     }
 }

@@ -2,16 +2,23 @@
 pragma solidity =0.8.21;
 
 import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
-
+import '@openzeppelin/contracts/proxy/beacon/IBeacon.sol';
+import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import './libraries/DeltaSwapLibrary.sol';
 import './interfaces/IDeltaSwapFactory.sol';
 import './DeltaSwapPair.sol';
+import './DeltaSwapV2Proxy.sol';
 
 /// @title DeltaSwapFactory contract
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
 /// @notice Factory contract to create DeltaSwapPairs.
 /// @dev All DeltaSwapPair contracts are unique by token pair
-contract DeltaSwapFactory is IDeltaSwapFactory {
+contract DeltaSwapFactory is IDeltaSwapFactory, IBeacon, Ownable2Step {
+    address private _implementation;
+
+    /// @dev Emitted when the implementation returned by the beacon is changed.
+    event Upgraded(address indexed implementation);
+
     address public override feeTo;
     uint16 public override feeNum = 5000; // GammaPool swap fee
     address public override feeToSetter;
@@ -23,10 +30,11 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
 
     uint16 public override gsProtocolId = 3;
 
-    constructor(address _feeToSetter, address _gammaPoolSetter, address _gsFactory) {
+    constructor(address _feeToSetter, address _gammaPoolSetter, address _gsFactory) Ownable(msg.sender) {
         feeToSetter = _feeToSetter;
         gammaPoolSetter = _gammaPoolSetter;
         gsFactory = _gsFactory;
+        _implementation = address(new DeltaSwapPair(address(this)));
     }
 
     function allPairsLength() external override view returns (uint256) {
@@ -38,7 +46,7 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         require(token0 != address(0), 'DeltaSwap: ZERO_ADDRESS');
         require(getPair[token0][token1] == address(0), 'DeltaSwap: PAIR_EXISTS'); // single check is sufficient
-        bytes memory bytecode = type(DeltaSwapPair).creationCode;
+        bytes memory bytecode = type(DeltaSwapV2Proxy).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
@@ -50,6 +58,23 @@ contract DeltaSwapFactory is IDeltaSwapFactory {
         emit PairCreated(token0, token1, pair, allPairs.length);
 
         _setGammaPool(pair);
+    }
+
+    /// @dev Returns the current implementation address.
+    function implementation() public view virtual returns (address) {
+        return _implementation;
+    }
+
+    /// @dev Upgrades the beacon to a new implementation.
+    function upgradeTo(address newImplementation) public virtual onlyOwner {
+        _setImplementation(newImplementation);
+    }
+
+    /// @dev Sets the implementation contract address for this beacon
+    function _setImplementation(address newImplementation) private {
+        require(newImplementation.code.length > 0, 'DeltaSwap: INVALID_IMPLEMENTATION');
+        _implementation = newImplementation;
+        emit Upgraded(newImplementation);
     }
 
     function setFeeNum(uint16 _feeNum) external override {
