@@ -2,11 +2,11 @@
 pragma solidity =0.8.21;
 
 import './libraries/FixedPoint.sol';
-import './libraries/DeltaSwapOracleLibrary.sol';
+import './libraries/DeltaSwapV2OracleLibrary.sol';
 
-import '../interfaces/IDeltaSwapFactory.sol';
-import '../interfaces/IDeltaSwapPair.sol';
-import '../libraries/DeltaSwapLibrary.sol';
+import '../interfaces/IDeltaSwapV2Factory.sol';
+import '../interfaces/IDeltaSwapV2Pair.sol';
+import '../libraries/DeltaSwapV2Library.sol';
 
 // sliding window oracle that uses observations collected over a window to provide moving price averages in the past
 // `windowSize` with a precision of `windowSize / granularity`
@@ -69,7 +69,7 @@ contract ExampleSlidingWindowOracle {
     // update the cumulative price for the observation at the current timestamp. each observation is updated at most
     // once per epoch period.
     function update(address tokenA, address tokenB) external {
-        address pair = DeltaSwapLibrary.pairFor(factory, tokenA, tokenB);
+        address pair = DeltaSwapV2Library.pairFor(factory, tokenA, tokenB);
 
         // populate the array with empty observations (first call only)
         for (uint256 i = pairObservations[pair].length; i < granularity; i++) {
@@ -83,7 +83,7 @@ contract ExampleSlidingWindowOracle {
         // we only want to commit updates once per period (i.e. windowSize / granularity)
         uint256 timeElapsed = block.timestamp - observation.timestamp;
         if (timeElapsed > periodSize) {
-            (uint256 price0Cumulative, uint256 price1Cumulative,) = DeltaSwapOracleLibrary.currentCumulativePrices(pair);
+            (uint256 price0Cumulative, uint256 price1Cumulative,) = DeltaSwapV2OracleLibrary.currentCumulativePrices(pair);
             observation.timestamp = block.timestamp;
             observation.price0Cumulative = price0Cumulative;
             observation.price1Cumulative = price1Cumulative;
@@ -110,7 +110,7 @@ contract ExampleSlidingWindowOracle {
     // range [now - [windowSize, windowSize - periodSize * 2], now]
     // update must have been called for the bucket corresponding to timestamp `now - windowSize`
     function consult(address tokenIn, uint256 amountIn, address tokenOut) external view returns (uint256 amountOut) {
-        address pair = DeltaSwapLibrary.pairFor(factory, tokenIn, tokenOut);
+        address pair = DeltaSwapV2Library.pairFor(factory, tokenIn, tokenOut);
         Observation storage firstObservation = getFirstObservationInWindow(pair);
 
         uint256 timeElapsed = block.timestamp - firstObservation.timestamp;
@@ -118,8 +118,8 @@ contract ExampleSlidingWindowOracle {
         // should never happen.
         require(timeElapsed >= windowSize - periodSize * 2, 'SlidingWindowOracle: UNEXPECTED_TIME_ELAPSED');
 
-        (uint256 price0Cumulative, uint256 price1Cumulative,) = DeltaSwapOracleLibrary.currentCumulativePrices(pair);
-        (address token0,) = DeltaSwapLibrary.sortTokens(tokenIn, tokenOut);
+        (uint256 price0Cumulative, uint256 price1Cumulative,) = DeltaSwapV2OracleLibrary.currentCumulativePrices(pair);
+        (address token0,) = DeltaSwapV2Library.sortTokens(tokenIn, tokenOut);
 
         if (token0 == tokenIn) {
             return computeAmountOut(firstObservation.price0Cumulative, price0Cumulative, timeElapsed, amountIn);

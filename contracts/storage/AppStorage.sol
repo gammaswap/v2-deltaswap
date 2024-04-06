@@ -23,7 +23,7 @@ abstract contract AppStorage {
     }
 
     function _lock() internal {
-        require(s.unlocked == 1, 'DeltaSwap: LOCKED');
+        require(s.unlocked == 1, 'DeltaSwapV2: LOCKED');
         s.unlocked = 0;
     }
 

@@ -79,7 +79,7 @@ describe('DeltaSwapPair', () => {
             await addLiquidity(token0Amount, token1Amount)
             await token0.transfer(pair.address, swapAmount)
             await expect(pair.swap(0, expectedOutputAmount.add(1), wallet.address, '0x', overrides)).to.be.revertedWith(
-                'DeltaSwap: K'
+                'DeltaSwapV2: K'
             )
             await pair.swap(0, expectedOutputAmount, wallet.address, '0x', overrides)
         })
@@ -97,7 +97,7 @@ describe('DeltaSwapPair', () => {
             await addLiquidity(token0Amount, token1Amount)
             await token0.transfer(pair.address, inputAmount)
             await expect(pair.swap(outputAmount.add(1), 0, wallet.address, '0x', overrides)).to.be.revertedWith(
-                'DeltaSwap: K'
+                'DeltaSwapV2: K'
             )
             await pair.swap(outputAmount, 0, wallet.address, '0x', overrides)
         })

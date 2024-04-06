@@ -85,7 +85,7 @@ contract ERC20Test is IERC20Test {
     }
 
     function permit(address _owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external override {
-        require(deadline >= block.timestamp, 'DeltaSwap: EXPIRED');
+        require(deadline >= block.timestamp, 'DeltaSwapV2: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -94,7 +94,7 @@ contract ERC20Test is IERC20Test {
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == _owner, 'DeltaSwap: INVALID_SIGNATURE');
+        require(recoveredAddress != address(0) && recoveredAddress == _owner, 'DeltaSwapV2: INVALID_SIGNATURE');
         _approve(_owner, spender, value);
     }
 }

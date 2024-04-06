@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import './interfaces/IDeltaSwapERC20.sol';
+import './interfaces/IDeltaSwapV2ERC20.sol';
 import "./storage/AppStorage.sol";
 
-contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
+contract DeltaSwapV2ERC20 is AppStorage, IDeltaSwapV2ERC20 {
     string public constant override name = 'DeltaSwap V2';
     string public constant override symbol = 'DS-V2';
     uint8 public constant override decimals = 18;
@@ -15,7 +15,7 @@ contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
     }
 
     function _initializeDomainSeparator() internal {
-        require(s.DOMAIN_SEPARATOR == bytes32(0), 'DeltaSwap: DOMAIN_SEPARATOR_INITIALIZED');
+        require(s.DOMAIN_SEPARATOR == bytes32(0), 'DeltaSwapV2: DOMAIN_SEPARATOR_INITIALIZED');
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -94,7 +94,7 @@ contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
     }
 
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 _v, bytes32 _r, bytes32 _s) external override {
-        require(deadline >= block.timestamp, 'DeltaSwap: EXPIRED');
+        require(deadline >= block.timestamp, 'DeltaSwapV2: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -103,7 +103,7 @@ contract DeltaSwapERC20 is AppStorage, IDeltaSwapERC20 {
             )
         );
         address recoveredAddress = ecrecover(digest, _v, _r, _s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DeltaSwap: INVALID_SIGNATURE');
+        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DeltaSwapV2: INVALID_SIGNATURE');
         _approve(owner, spender, value);
     }
 }

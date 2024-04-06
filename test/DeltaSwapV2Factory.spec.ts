@@ -27,7 +27,7 @@ describe('DeltaSwapFactory', () => {
     let factory: Contract
 
     beforeEach(async () => {
-        DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+        DeltaSwapPair = await ethers.getContractFactory("DeltaSwapV2Pair");
         DeltaSwapV2Proxy = await ethers.getContractFactory("DeltaSwapV2Proxy");
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet);
@@ -79,32 +79,32 @@ describe('DeltaSwapFactory', () => {
     })
 
     it('setFeeTo', async () => {
-        await expect(factory.connect(other).setFeeTo(other.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await expect(factory.connect(other).setFeeTo(other.address)).to.be.revertedWith('DeltaSwapV2: FORBIDDEN')
         await factory.setFeeTo(wallet.address)
         expect(await factory.feeTo()).to.eq(wallet.address)
     })
 
     it('setFeeNum', async () => {
-        await expect(factory.connect(other).setFeeNum(1000)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await expect(factory.connect(other).setFeeNum(1000)).to.be.revertedWith('DeltaSwapV2: FORBIDDEN')
         await factory.setFeeNum(1000)
         expect(await factory.feeNum()).to.eq(1000)
     })
 
     it('setFeeToSetter', async () => {
-        await expect(factory.connect(other).setFeeToSetter(other.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await expect(factory.connect(other).setFeeToSetter(other.address)).to.be.revertedWith('DeltaSwapV2: FORBIDDEN')
         await factory.setFeeToSetter(other.address)
         expect(await factory.feeToSetter()).to.eq(other.address)
-        await expect(factory.setFeeToSetter(wallet.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await expect(factory.setFeeToSetter(wallet.address)).to.be.revertedWith('DeltaSwapV2: FORBIDDEN')
     })
 
     it('setGSProtocolId', async () => {
-        await expect(factory.connect(other).setGSProtocolId(1000)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await expect(factory.connect(other).setGSProtocolId(1000)).to.be.revertedWith('DeltaSwapV2: FORBIDDEN')
         await factory.setGSProtocolId(1000)
         expect(await factory.gsProtocolId()).to.eq(1000)
     })
 
     it('setGSFactory', async () => {
-        await expect(factory.connect(other).setGSFactory(other.address)).to.be.revertedWith('DeltaSwap: FORBIDDEN')
+        await expect(factory.connect(other).setGSFactory(other.address)).to.be.revertedWith('DeltaSwapV2: FORBIDDEN')
         await factory.setGSFactory(other.address)
         expect(await factory.gsFactory()).to.eq(other.address)
     })
@@ -115,7 +115,7 @@ describe('DeltaSwapFactory', () => {
         const gammaPoolAddr = await pair.gammaPool();
         expect(gammaPoolAddr).to.not.eq(constants.AddressZero);
 
-        await expect(factory.connect(other).updateGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1])).to.be.revertedWith('DeltaSwap: FORBIDDEN');
+        await expect(factory.connect(other).updateGammaPool(TEST_ADDRESSES[0], TEST_ADDRESSES[1])).to.be.revertedWith('DeltaSwapV2: FORBIDDEN');
         expect(await pair.gammaPool()).to.eq(gammaPoolAddr);
 
         await factory.setGSProtocolId(1000);

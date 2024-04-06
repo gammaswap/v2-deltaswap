@@ -3,8 +3,8 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import "../../../contracts/DeltaSwapRouter02.sol";
-import "../../../contracts/DeltaSwapFactory.sol";
+import "../../../contracts/DeltaSwapV2Router02.sol";
+import "../../../contracts/DeltaSwapV2Factory.sol";
 
 import "../../../contracts/test/WETH9.sol";
 import "../../../contracts/test/ERC20Test.sol";

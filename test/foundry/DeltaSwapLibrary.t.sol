@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import "../../contracts/libraries/DeltaSwapLibrary.sol";
+import "../../contracts/libraries/DeltaSwapV2Library.sol";
 import "../../contracts/libraries/DSMath.sol";
 
 contract DeltaSwapLibraryTest is Test {

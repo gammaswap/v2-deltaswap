@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import './libraries/DeltaSwapLiquidityMathLibrary.sol';
+import './libraries/DeltaSwapV2LiquidityMathLibrary.sol';
 
 contract ExampleComputeLiquidityValue {
 
@@ -11,14 +11,14 @@ contract ExampleComputeLiquidityValue {
         factory = factory_;
     }
 
-    // see DeltaSwapLiquidityMathLibrary#getReservesAfterArbitrage
+    // see DeltaSwapV2LiquidityMathLibrary#getReservesAfterArbitrage
     function getReservesAfterArbitrage(
         address tokenA,
         address tokenB,
         uint256 truePriceTokenA,
         uint256 truePriceTokenB
     ) external view returns (uint256 reserveA, uint256 reserveB) {
-        return DeltaSwapLiquidityMathLibrary.getReservesAfterArbitrage(
+        return DeltaSwapV2LiquidityMathLibrary.getReservesAfterArbitrage(
             factory,
             tokenA,
             tokenB,
@@ -27,7 +27,7 @@ contract ExampleComputeLiquidityValue {
         );
     }
 
-    // see DeltaSwapLiquidityMathLibrary#getLiquidityValue
+    // see DeltaSwapV2LiquidityMathLibrary#getLiquidityValue
     function getLiquidityValue(
         address tokenA,
         address tokenB,
@@ -36,7 +36,7 @@ contract ExampleComputeLiquidityValue {
         uint256 tokenAAmount,
         uint256 tokenBAmount
     ) {
-        return DeltaSwapLiquidityMathLibrary.getLiquidityValue(
+        return DeltaSwapV2LiquidityMathLibrary.getLiquidityValue(
             factory,
             tokenA,
             tokenB,
@@ -44,7 +44,7 @@ contract ExampleComputeLiquidityValue {
         );
     }
 
-    // see DeltaSwapLiquidityMathLibrary#getLiquidityValueAfterArbitrageToPrice
+    // see DeltaSwapV2LiquidityMathLibrary#getLiquidityValueAfterArbitrageToPrice
     function getLiquidityValueAfterArbitrageToPrice(
         address tokenA,
         address tokenB,
@@ -55,7 +55,7 @@ contract ExampleComputeLiquidityValue {
         uint256 tokenAAmount,
         uint256 tokenBAmount
     ) {
-        return DeltaSwapLiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
+        return DeltaSwapV2LiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
             factory,
             tokenA,
             tokenB,
@@ -76,7 +76,7 @@ contract ExampleComputeLiquidityValue {
         uint256
     ) {
         uint256 gasBefore = gasleft();
-        DeltaSwapLiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
+        DeltaSwapV2LiquidityMathLibrary.getLiquidityValueAfterArbitrageToPrice(
             factory,
             tokenA,
             tokenB,

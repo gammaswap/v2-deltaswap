@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import '../interfaces/IDeltaSwapCallee.sol';
+import '../interfaces/IDeltaSwapV2Callee.sol';
 
-import '../libraries/DeltaSwapLibrary.sol';
+import '../libraries/DeltaSwapV2Library.sol';
 import '../interfaces/V1/IUniswapV1Factory.sol';
 import '../interfaces/V1/IUniswapV1Exchange.sol';
-import '../interfaces/IDeltaSwapRouter01.sol';
+import '../interfaces/IDeltaSwapV2Router01.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IWETH.sol';
 
-contract ExampleFlashSwap is IDeltaSwapCallee {
+contract ExampleFlashSwap is IDeltaSwapV2Callee {
     IUniswapV1Factory immutable factoryV1;
     address immutable factory;
     IWETH immutable WETH;
@@ -18,7 +18,7 @@ contract ExampleFlashSwap is IDeltaSwapCallee {
     constructor(address _factory, address _factoryV1, address router) {
         factoryV1 = IUniswapV1Factory(_factoryV1);
         factory = _factory;
-        WETH = IWETH(IDeltaSwapRouter01(router).WETH());
+        WETH = IWETH(IDeltaSwapV2Router01(router).WETH());
     }
 
     // needs to accept ETH from any V1 exchange and WETH. ideally this could be enforced, as in the router,
@@ -31,9 +31,9 @@ contract ExampleFlashSwap is IDeltaSwapCallee {
         uint256 amountToken;
         uint256 amountETH;
         { // scope for token{0,1}, avoids stack too deep errors
-            address token0 = IDeltaSwapPair(msg.sender).token0();
-            address token1 = IDeltaSwapPair(msg.sender).token1();
-            assert(msg.sender == DeltaSwapLibrary.pairFor(factory, token0, token1)); // ensure that msg.sender is actually a V2 pair
+            address token0 = IDeltaSwapV2Pair(msg.sender).token0();
+            address token1 = IDeltaSwapV2Pair(msg.sender).token1();
+            assert(msg.sender == DeltaSwapV2Library.pairFor(factory, token0, token1)); // ensure that msg.sender is actually a V2 pair
             assert(amount0 == 0 || amount1 == 0); // this strategy is unidirectional
             path[0] = amount0 == 0 ? token0 : token1;
             path[1] = amount0 == 0 ? token1 : token0;
@@ -49,7 +49,7 @@ contract ExampleFlashSwap is IDeltaSwapCallee {
             (uint256 minETH) = abi.decode(data, (uint256)); // slippage parameter for V1, passed in by caller
             token.approve(address(exchangeV1), amountToken);
             uint256 amountReceived = exchangeV1.tokenToEthSwapInput(amountToken, minETH, type(uint256).max);
-            uint256 amountRequired = DeltaSwapLibrary.getAmountsIn(factory, amountToken, path)[0];
+            uint256 amountRequired = DeltaSwapV2Library.getAmountsIn(factory, amountToken, path)[0];
             assert(amountReceived > amountRequired); // fail if we didn't get enough ETH back to repay our flash loan
             WETH.deposit{value: amountRequired}();
             assert(WETH.transfer(msg.sender, amountRequired)); // return WETH to V2 pair
@@ -59,7 +59,7 @@ contract ExampleFlashSwap is IDeltaSwapCallee {
             (uint256 minTokens) = abi.decode(data, (uint256)); // slippage parameter for V1, passed in by caller
             WETH.withdraw(amountETH);
             uint256 amountReceived = exchangeV1.ethToTokenSwapInput{value: amountETH}(minTokens, type(uint256).max);
-            uint256 amountRequired = DeltaSwapLibrary.getAmountsIn(factory, amountETH, path)[0];
+            uint256 amountRequired = DeltaSwapV2Library.getAmountsIn(factory, amountETH, path)[0];
             assert(amountReceived > amountRequired); // fail if we didn't get enough tokens back to repay our flash loan
             assert(token.transfer(msg.sender, amountRequired)); // return tokens to V2 pair
             assert(token.transfer(sender, amountReceived - amountRequired)); // keep the rest! (tokens)

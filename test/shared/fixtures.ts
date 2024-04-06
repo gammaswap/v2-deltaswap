@@ -51,7 +51,7 @@ let ERC20: any;
 export async function factoryFixture(wallet: any): Promise<FactoryFixture> {
     GammaPoolFactory = await ethers.getContractFactory(GammaPoolFactoryJSON.abi, GammaPoolFactoryJSON.bytecode, wallet);
     const gsFactory = await GammaPoolFactory.deploy(wallet.address, overrides);
-    DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
+    DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapV2Factory");
     const factory = await DeltaSwapFactory.deploy(wallet.address, wallet.address, gsFactory.address, overrides);
     return { factory }
 }
@@ -66,7 +66,7 @@ export async function pairFixture(wallet: any): Promise<PairFixture> {
     await factory.createPair(tokenA.address, tokenB.address, overrides)
     const pairAddress = await factory.getPair(tokenA.address, tokenB.address)
 
-    DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+    DeltaSwapPair = await ethers.getContractFactory("DeltaSwapV2Pair");
     const pair = DeltaSwapPair.attach(pairAddress);
 
     const token0Address = (await pair.token0())
@@ -100,12 +100,12 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
     const gsFactory = await GammaPoolFactory.deploy(wallet.address, overrides);
 
     // deploy V2
-    DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapFactory");
+    DeltaSwapFactory = await ethers.getContractFactory("DeltaSwapV2Factory");
     const factoryV2 = await DeltaSwapFactory.deploy(wallet.address, wallet.address, gsFactory.address, overrides);
 
     // deploy routers
-    DeltaSwapRouter01 = await ethers.getContractFactory("DeltaSwapRouter01");
-    DeltaSwapRouter02 = await ethers.getContractFactory("DeltaSwapRouter02");
+    DeltaSwapRouter01 = await ethers.getContractFactory("DeltaSwapV2Router01");
+    DeltaSwapRouter02 = await ethers.getContractFactory("DeltaSwapV2Router02");
     const router01 = await DeltaSwapRouter01.deploy(factoryV2.address, WETH.address, overrides);
     const router02 = await DeltaSwapRouter02.deploy(factoryV2.address, WETH.address, overrides);
 
@@ -124,7 +124,7 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
     // initialize V2
     await factoryV2.createPair(tokenA.address, tokenB.address);
     const pairAddress = await factoryV2.getPair(tokenA.address, tokenB.address);
-    DeltaSwapPair = await ethers.getContractFactory("DeltaSwapPair");
+    DeltaSwapPair = await ethers.getContractFactory("DeltaSwapV2Pair");
     const pair = DeltaSwapPair.attach(pairAddress);
 
     const token0Address = await pair.token0()

@@ -45,7 +45,7 @@ library LibStorage {
     /// @param _token0 - tokens of CFMM this GammaPool is for
     /// @param _token1 -decimals of the tokens of the CFMM the GammaPool is for, indices must match tokens array
     function initialize(Storage storage self, address _token0, address _token1) internal {
-        require(self.token0 == address(0) && self.token1 == address(0), 'DeltaSwap: INITIALIZED');// cannot initialize twice
+        require(self.token0 == address(0) && self.token1 == address(0), 'DeltaSwapV2: INITIALIZED');// cannot initialize twice
 
         self.unlocked = 1; // mutex initialized as unlocked
         self.token0 = _token0;
