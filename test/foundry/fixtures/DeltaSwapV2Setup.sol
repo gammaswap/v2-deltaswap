@@ -9,11 +9,11 @@ import "../../../contracts/DeltaSwapV2Factory.sol";
 import "../../../contracts/test/WETH9.sol";
 import "../../../contracts/test/ERC20Test.sol";
 
-contract DeltaSwapSetup is Test {
+contract DeltaSwapV2Setup is Test {
 
-    IDeltaSwapFactory public dsFactory;
-    IDeltaSwapRouter02 public dsRouter;
-    IDeltaSwapPair public dsPair;
+    IDeltaSwapV2Factory public dsFactory;
+    IDeltaSwapV2Router02 public dsRouter;
+    IDeltaSwapV2Pair public dsPair;
 
     function initDeltaSwap(address owner, address weth, address usdc, address wbtc) public {
         // Let's do the same thing with `getCode`
@@ -26,10 +26,10 @@ contract DeltaSwapSetup is Test {
             gsFactoryAddress := create(0, add(gsFactoryBytecode, 0x20), mload(gsFactoryBytecode))
         }
 
-        dsFactory = new DeltaSwapFactory(owner, owner, gsFactoryAddress);
-        dsRouter = new DeltaSwapRouter02(address(dsFactory), weth);
+        dsFactory = new DeltaSwapV2Factory(owner, owner, gsFactoryAddress);
+        dsRouter = new DeltaSwapV2Router02(address(dsFactory), weth);
 
-        dsPair = DeltaSwapPair(createPair(address(usdc), address(wbtc)));
+        dsPair = DeltaSwapV2Pair(createPair(address(usdc), address(wbtc)));
         /*bytes memory bytecode = type(DeltaSwapV2Proxy).creationCode;
         bytes32 initCode = keccak256(bytecode);
         console.log("initCode");
