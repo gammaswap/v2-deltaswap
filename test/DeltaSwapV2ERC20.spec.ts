@@ -8,7 +8,7 @@ import { expandTo18Decimals, getApprovalDigest } from './shared/utilities'
 const TOTAL_SUPPLY = expandTo18Decimals(10000)
 const TEST_AMOUNT = expandTo18Decimals(10)
 
-describe('DeltaSwapERC20', () => {
+describe('DeltaSwapV2ERC20', () => {
     let ERC20: any;
     let wallet: any;
     let other: any;

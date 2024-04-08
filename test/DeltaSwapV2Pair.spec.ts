@@ -11,7 +11,7 @@ const overrides = {
     gasLimit: 9999999
 }
 
-describe('DeltaSwapPair', () => {
+describe('DeltaSwapV2Pair', () => {
     let factory: Contract
     let token0: Contract
     let token1: Contract
@@ -172,7 +172,7 @@ describe('DeltaSwapPair', () => {
         await mineBlock(provider, (await provider.getBlock('latest')).timestamp + 1)
         const tx = await pair.swap(expectedOutputAmount, 0, wallet.address, '0x', overrides)
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(119064) // 113055
+        expect(receipt.gasUsed).to.eq(119079) // 113055
     })
 
     it('burn', async () => {

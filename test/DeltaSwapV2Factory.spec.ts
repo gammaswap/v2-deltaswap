@@ -19,7 +19,7 @@ const formatObject = (obj: any) => {
     , 2);
 }
 
-describe('DeltaSwapFactory', () => {
+describe('DeltaSwapV2Factory', () => {
     let DeltaSwapPair: any;
     let DeltaSwapV2Proxy: any;
     let wallet: any;
@@ -75,7 +75,7 @@ describe('DeltaSwapFactory', () => {
         const gasPrice = utils.parseUnits('10', 'gwei');  // Set your desired gas price
         const tx = await factory.createPair(...TEST_ADDRESSES, {gasLimit: 9999999, gasPrice: gasPrice})
         const receipt = await tx.wait()
-        expect(receipt.gasUsed).to.eq(337376) // 2643257
+        expect(receipt.gasUsed).to.eq(339012) // 2643257
     })
 
     it('setFeeTo', async () => {
