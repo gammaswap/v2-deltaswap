@@ -2,11 +2,11 @@
 pragma solidity =0.8.21;
 
 import './libraries/FixedPoint.sol';
-import './libraries/DeltaSwapOracleLibrary.sol';
+import './libraries/DeltaSwapV2OracleLibrary.sol';
 
-import '../interfaces/IDeltaSwapFactory.sol';
-import '../interfaces/IDeltaSwapPair.sol';
-import '../libraries/DeltaSwapLibrary.sol';
+import '../interfaces/IDeltaSwapV2Factory.sol';
+import '../interfaces/IDeltaSwapV2Pair.sol';
+import '../libraries/DeltaSwapV2Library.sol';
 
 // fixed window oracle that recomputes the average price for the entire period once every period
 // note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
@@ -15,7 +15,7 @@ contract ExampleOracleSimple {
 
     uint256 public constant PERIOD = 24 hours;
 
-    IDeltaSwapPair immutable pair;
+    IDeltaSwapV2Pair immutable pair;
     address public immutable token0;
     address public immutable token1;
 
@@ -26,7 +26,7 @@ contract ExampleOracleSimple {
     FixedPoint.uq112x112 public price1Average;
 
     constructor(address factory, address tokenA, address tokenB) {
-        IDeltaSwapPair _pair = IDeltaSwapPair(DeltaSwapLibrary.pairFor(factory, tokenA, tokenB));
+        IDeltaSwapV2Pair _pair = IDeltaSwapV2Pair(DeltaSwapV2Library.pairFor(factory, tokenA, tokenB));
         pair = _pair;
         token0 = _pair.token0();
         token1 = _pair.token1();
@@ -40,7 +40,7 @@ contract ExampleOracleSimple {
 
     function update() external {
         (uint256 price0Cumulative, uint256 price1Cumulative, uint32 blockTimestamp) =
-        DeltaSwapOracleLibrary.currentCumulativePrices(address(pair));
+        DeltaSwapV2OracleLibrary.currentCumulativePrices(address(pair));
         uint32 timeElapsed;
         unchecked {
             timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired

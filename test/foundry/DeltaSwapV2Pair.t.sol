@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.8.0;
 
-import "./fixtures/DeltaSwapSetup.sol";
+import "./fixtures/DeltaSwapV2Setup.sol";
 
-contract DeltaSwapPairTest is DeltaSwapSetup {
+contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
 
     WETH9 public weth;
     ERC20Test public usdc;
@@ -782,7 +782,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(_dsFeeThreshold, 21000);
 
         vm.startPrank(addr1);
-        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        vm.expectRevert("DeltaSwapV2: FORBIDDEN");
         dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 21000, _yieldPeriod);
         vm.stopPrank();
 
@@ -807,7 +807,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(_dsFee, 50);
 
         vm.startPrank(addr1);
-        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        vm.expectRevert("DeltaSwapV2: FORBIDDEN");
         dsFactory.setFeeParameters(address(dsPair), _gsFee, 5, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
@@ -833,7 +833,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
         vm.startPrank(addr1);
 
-        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        vm.expectRevert("DeltaSwapV2: FORBIDDEN");
         dsFactory.setGammaPoolSetter(addr1);
 
         assertEq(dsFactory.gammaPoolSetter(), owner);
@@ -846,7 +846,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(dsPair), protocolId));
 
-        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        address poolAddr = DeltaSwapV2Library.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
 
         vm.startPrank(address(dsFactory));
         dsPair.setGammaPool(poolAddr);
@@ -860,8 +860,8 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         uint16 protocolId = 1;
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(dsPair), protocolId));
-        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
-        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        address poolAddr = DeltaSwapV2Library.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        vm.expectRevert("DeltaSwapV2: FORBIDDEN");
         dsPair.setGammaPool(poolAddr);
     }
 
@@ -882,7 +882,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         assertNotEq(_gsFee, 5);
 
         vm.startPrank(addr1);
-        vm.expectRevert("DeltaSwap: FORBIDDEN");
+        vm.expectRevert("DeltaSwapV2: FORBIDDEN");
         dsFactory.setFeeParameters(address(dsPair), 50, _dsFee, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
@@ -903,7 +903,7 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
         address implementation = vm.addr(200);
         bytes32 gsPoolKey = keccak256(abi.encode(address(dsPair), protocolId));
 
-        address poolAddr = DeltaSwapLibrary.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
+        address poolAddr = DeltaSwapV2Library.predictDeterministicAddress(implementation, gsPoolKey, gsFactory);
 
         vm.startPrank(address(dsFactory));
         dsPair.setGammaPool(poolAddr);
@@ -917,15 +917,15 @@ contract DeltaSwapPairTest is DeltaSwapSetup {
 
         vm.startPrank(poolAddr);
         wbtc.transfer(address(dsPair), amountIn);
-        vm.expectRevert("DeltaSwap: K");
+        vm.expectRevert("DeltaSwapV2: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
         amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 10);
-        vm.expectRevert("DeltaSwap: K");
+        vm.expectRevert("DeltaSwapV2: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
         amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 20);
-        vm.expectRevert("DeltaSwap: K");
+        vm.expectRevert("DeltaSwapV2: K");
         dsPair.swap(0, amountOut, poolAddr, new bytes(0));
 
         amountOut = dsRouter.getAmountOut(amountIn, reserve0, reserve1, 30);

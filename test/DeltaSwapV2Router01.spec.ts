@@ -13,11 +13,11 @@ const overrides = {
 }
 
 enum RouterVersion {
-    DeltaSwapRouter01 = 'DeltaSwapRouter01',
-    DeltaSwapRouter02 = 'DeltaSwapRouter02'
+    DeltaSwapV2Router01 = 'DeltaSwapV2Router01',
+    DeltaSwapV2Router02 = 'DeltaSwapV2Router02'
 }
 
-describe('DeltaSwapRouter{01,02}', () => {
+describe('DeltaSwapV2Router{01,02}', () => {
     for (const routerVersion of Object.keys(RouterVersion)) {
         let token0: Contract
         let token1: Contract
@@ -41,8 +41,8 @@ describe('DeltaSwapRouter{01,02}', () => {
             WETHPartner = fixture.WETHPartner
             factory = fixture.factoryV2
             router = {
-                [RouterVersion.DeltaSwapRouter01]: fixture.router01,
-                [RouterVersion.DeltaSwapRouter02]: fixture.router02
+                [RouterVersion.DeltaSwapV2Router01]: fixture.router01,
+                [RouterVersion.DeltaSwapV2Router02]: fixture.router02
             }[routerVersion as RouterVersion]
             pair = fixture.pair
             WETHPair = fixture.WETHPair
@@ -371,8 +371,8 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 143853,
-                            [RouterVersion.DeltaSwapRouter02]: 143942
+                            [RouterVersion.DeltaSwapV2Router01]: 152307, // 144244
+                            [RouterVersion.DeltaSwapV2Router02]: 152396, // 144333
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)
@@ -520,8 +520,8 @@ describe('DeltaSwapRouter{01,02}', () => {
                     const receipt = await tx.wait()
                     expect(receipt.gasUsed).to.eq(
                         {
-                            [RouterVersion.DeltaSwapRouter01]: 147237,
-                            [RouterVersion.DeltaSwapRouter02]: 147176
+                            [RouterVersion.DeltaSwapV2Router01]: 155673, // 147610
+                            [RouterVersion.DeltaSwapV2Router02]: 155612 // 147549
                         }[routerVersion as RouterVersion]
                     )
                 }).retries(3)

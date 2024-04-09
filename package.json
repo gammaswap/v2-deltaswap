@@ -1,6 +1,6 @@
 {
   "name": "@gammaswap/v2-deltaswap",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "GammaSwap feeless and yield streaming spot DEX",
   "main": "index.js",
   "publishConfig": {
@@ -63,6 +63,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@gammaswap/v1-core": "^1.2.2"
+    "@gammaswap/v1-core": "^1.2.2",
+    "@openzeppelin/contracts": "^5.0.2"
   }
 }

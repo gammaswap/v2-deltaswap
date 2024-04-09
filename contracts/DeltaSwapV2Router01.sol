@@ -2,18 +2,18 @@
 pragma solidity =0.8.21;
 
 import './libraries/DSTransferHelper.sol';
-import './libraries/DeltaSwapLibrary.sol';
-import './interfaces/IDeltaSwapFactory.sol';
-import './interfaces/IDeltaSwapRouter01.sol';
+import './libraries/DeltaSwapV2Library.sol';
+import './interfaces/IDeltaSwapV2Factory.sol';
+import './interfaces/IDeltaSwapV2Router01.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
-contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
+contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
     address public immutable override factory;
     address public immutable override WETH;
 
     modifier ensure(uint256 deadline) {
-        require(deadline >= block.timestamp, 'DeltaSwapRouter: EXPIRED');
+        require(deadline >= block.timestamp, 'DeltaSwapV2Router: EXPIRED');
         _;
     }
 
@@ -36,21 +36,21 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         uint256 amountBMin
     ) internal virtual returns (uint256 amountA, uint256 amountB) {
         // create the pair if it doesn't exist yet
-        if (IDeltaSwapFactory(factory).getPair(tokenA, tokenB) == address(0)) {
-            IDeltaSwapFactory(factory).createPair(tokenA, tokenB);
+        if (IDeltaSwapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
+            IDeltaSwapV2Factory(factory).createPair(tokenA, tokenB);
         }
-        (uint256 reserveA, uint256 reserveB,) = DeltaSwapLibrary.getReserves(factory, tokenA, tokenB);
+        (uint256 reserveA, uint256 reserveB,) = DeltaSwapV2Library.getReserves(factory, tokenA, tokenB);
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint256 amountBOptimal = DeltaSwapLibrary.quote(amountADesired, reserveA, reserveB);
+            uint256 amountBOptimal = DeltaSwapV2Library.quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'DeltaSwapRouter: INSUFFICIENT_B_AMOUNT');
+                require(amountBOptimal >= amountBMin, 'DeltaSwapV2Router: INSUFFICIENT_B_AMOUNT');
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint256 amountAOptimal = DeltaSwapLibrary.quote(amountBDesired, reserveB, reserveA);
+                uint256 amountAOptimal = DeltaSwapV2Library.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'DeltaSwapRouter: INSUFFICIENT_A_AMOUNT');
+                require(amountAOptimal >= amountAMin, 'DeltaSwapV2Router: INSUFFICIENT_A_AMOUNT');
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
@@ -66,10 +66,10 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
-        address pair = DeltaSwapLibrary.pairFor(factory, tokenA, tokenB);
+        address pair = DeltaSwapV2Library.pairFor(factory, tokenA, tokenB);
         DSTransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         DSTransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-        liquidity = IDeltaSwapPair(pair).mint(to);
+        liquidity = IDeltaSwapV2Pair(pair).mint(to);
     }
     function addLiquidityETH(
         address token,
@@ -87,11 +87,11 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
             amountTokenMin,
             amountETHMin
         );
-        address pair = DeltaSwapLibrary.pairFor(factory, token, WETH);
+        address pair = DeltaSwapV2Library.pairFor(factory, token, WETH);
         DSTransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
-        liquidity = IDeltaSwapPair(pair).mint(to);
+        liquidity = IDeltaSwapV2Pair(pair).mint(to);
         if (msg.value > amountETH) DSTransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);// refund dust eth, if any
     }
 
@@ -105,13 +105,13 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         address to,
         uint256 deadline
     ) public virtual override ensure(deadline) returns (uint256 amountA, uint256 amountB) {
-        address pair = DeltaSwapLibrary.pairFor(factory, tokenA, tokenB);
-        IDeltaSwapPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-        (uint256 amount0, uint256 amount1) = IDeltaSwapPair(pair).burn(to);
-        (address token0,) = DeltaSwapLibrary.sortTokens(tokenA, tokenB);
+        address pair = DeltaSwapV2Library.pairFor(factory, tokenA, tokenB);
+        IDeltaSwapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+        (uint256 amount0, uint256 amount1) = IDeltaSwapV2Pair(pair).burn(to);
+        (address token0,) = DeltaSwapV2Library.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-        require(amountA >= amountAMin, 'DeltaSwapRouter: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'DeltaSwapRouter: INSUFFICIENT_B_AMOUNT');
+        require(amountA >= amountAMin, 'DeltaSwapV2Router: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'DeltaSwapV2Router: INSUFFICIENT_B_AMOUNT');
     }
     function removeLiquidityETH(
         address token,
@@ -144,9 +144,9 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         uint256 deadline,
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external virtual override returns (uint256 amountA, uint256 amountB) {
-        address pair = DeltaSwapLibrary.pairFor(factory, tokenA, tokenB);
+        address pair = DeltaSwapV2Library.pairFor(factory, tokenA, tokenB);
         uint256 value = approveMax ? type(uint256).max : liquidity;
-        IDeltaSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        IDeltaSwapV2Pair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
     }
     function removeLiquidityETHWithPermit(
@@ -158,9 +158,9 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         uint256 deadline,
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external virtual override returns (uint256 amountToken, uint256 amountETH) {
-        address pair = DeltaSwapLibrary.pairFor(factory, token, WETH);
+        address pair = DeltaSwapV2Library.pairFor(factory, token, WETH);
         uint256 value = approveMax ? type(uint256).max : liquidity;
-        IDeltaSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        IDeltaSwapV2Pair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
     }
 
@@ -169,11 +169,11 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     function _swap(uint256[] memory amounts, address[] memory path, address _to) internal virtual {
         for (uint256 i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = DeltaSwapLibrary.sortTokens(input, output);
+            (address token0,) = DeltaSwapV2Library.sortTokens(input, output);
             uint256 amountOut = amounts[i + 1];
             (uint256 amount0Out, uint256 amount1Out) = input == token0 ? (uint256(0), amountOut) : (amountOut, uint256(0));
-            address to = i < path.length - 2 ? DeltaSwapLibrary.pairFor(factory, output, path[i + 2]) : _to;
-            IDeltaSwapPair(DeltaSwapLibrary.pairFor(factory, input, output)).swap(amount0Out, amount1Out, to, new bytes(0));
+            address to = i < path.length - 2 ? DeltaSwapV2Library.pairFor(factory, output, path[i + 2]) : _to;
+            IDeltaSwapV2Pair(DeltaSwapV2Library.pairFor(factory, input, output)).swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
     function swapExactTokensForTokens(
@@ -183,9 +183,9 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         address to,
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
-        amounts = DeltaSwapLibrary.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        amounts = DeltaSwapV2Library.getAmountsOut(factory, amountIn, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, to);
     }
     function swapTokensForExactTokens(
@@ -195,9 +195,9 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
         address to,
         uint256 deadline
     ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
-        amounts = DeltaSwapLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'DeltaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        amounts = DeltaSwapV2Library.getAmountsIn(factory, amountOut, path);
+        require(amounts[0] <= amountInMax, 'DeltaSwapV2Router: EXCESSIVE_INPUT_AMOUNT');
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, to);
     }
     function swapExactETHForTokens(uint256 amountOutMin, address[] calldata path, address to, uint256 deadline)
@@ -208,11 +208,11 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ensure(deadline)
     returns (uint256[] memory amounts)
     {
-        require(path[0] == WETH, 'DeltaSwapRouter: INVALID_PATH');
-        amounts = DeltaSwapLibrary.getAmountsOut(factory, msg.value, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(path[0] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
+        amounts = DeltaSwapV2Library.getAmountsOut(factory, msg.value, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
+        assert(IWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
     }
     function swapTokensForExactETH(uint256 amountOut, uint256 amountInMax, address[] calldata path, address to, uint256 deadline)
@@ -222,10 +222,10 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ensure(deadline)
     returns (uint256[] memory amounts)
     {
-        require(path[path.length - 1] == WETH, 'DeltaSwapRouter: INVALID_PATH');
-        amounts = DeltaSwapLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'DeltaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        require(path[path.length - 1] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
+        amounts = DeltaSwapV2Library.getAmountsIn(factory, amountOut, path);
+        require(amounts[0] <= amountInMax, 'DeltaSwapV2Router: EXCESSIVE_INPUT_AMOUNT');
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         DSTransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
@@ -237,10 +237,10 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ensure(deadline)
     returns (uint256[] memory amounts)
     {
-        require(path[path.length - 1] == WETH, 'DeltaSwapRouter: INVALID_PATH');
-        amounts = DeltaSwapLibrary.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        require(path[path.length - 1] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
+        amounts = DeltaSwapV2Library.getAmountsOut(factory, amountIn, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
+        DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         DSTransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
@@ -253,33 +253,33 @@ contract DeltaSwapRouter01 is IDeltaSwapRouter01 {
     ensure(deadline)
     returns (uint256[] memory amounts)
     {
-        require(path[0] == WETH, 'DeltaSwapRouter: INVALID_PATH');
-        amounts = DeltaSwapLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= msg.value, 'DeltaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
+        require(path[0] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
+        amounts = DeltaSwapV2Library.getAmountsIn(factory, amountOut, path);
+        require(amounts[0] <= msg.value, 'DeltaSwapV2Router: EXCESSIVE_INPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(DeltaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
+        assert(IWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
         if (msg.value > amounts[0]) DSTransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);// refund dust eth, if any
     }
 
     // **** LIBRARY FUNCTIONS ****
     function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) public pure virtual override returns (uint256 amountB) {
-        return DeltaSwapLibrary.quote(amountA, reserveA, reserveB);
+        return DeltaSwapV2Library.quote(amountA, reserveA, reserveB);
     }
 
     function getAmountOut(uint256 amountIn, uint256 reserveIn, uint256 reserveOut, uint256 fee) public pure virtual override returns (uint256 amountOut) {
-        return DeltaSwapLibrary.getAmountOut(amountIn, reserveIn, reserveOut, fee);
+        return DeltaSwapV2Library.getAmountOut(amountIn, reserveIn, reserveOut, fee);
     }
 
     function getAmountIn(uint256 amountOut, uint256 reserveIn, uint256 reserveOut, uint256 fee) public pure virtual override returns (uint256 amountIn) {
-        return DeltaSwapLibrary.getAmountIn(amountOut, reserveIn, reserveOut, fee);
+        return DeltaSwapV2Library.getAmountIn(amountOut, reserveIn, reserveOut, fee);
     }
 
     function getAmountsOut(uint256 amountIn, address[] memory path) public view virtual override returns (uint256[] memory amounts) {
-        return DeltaSwapLibrary.getAmountsOut(factory, amountIn, path);
+        return DeltaSwapV2Library.getAmountsOut(factory, amountIn, path);
     }
 
     function getAmountsIn(uint256 amountOut, address[] memory path) public view virtual override returns (uint256[] memory amounts) {
-        return DeltaSwapLibrary.getAmountsIn(factory, amountOut, path);
+        return DeltaSwapV2Library.getAmountsIn(factory, amountOut, path);
     }
 }

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import '../DeltaSwapERC20.sol';
+import '../DeltaSwapV2ERC20.sol';
 
-contract ERC20 is DeltaSwapERC20 {
+contract ERC20 is DeltaSwapV2ERC20 {
     constructor(uint256 _totalSupply) {
+        _initializeDomainSeparator();
         _mint(msg.sender, _totalSupply);
     }
 }

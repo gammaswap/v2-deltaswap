@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.0;
 
-import "./IDeltaSwapERC20.sol";
+import "./IDeltaSwapV2ERC20.sol";
 
-interface IDeltaSwapPair is IDeltaSwapERC20 {
+interface IDeltaSwapV2Pair is IDeltaSwapV2ERC20 {
 
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
     event Burn(address indexed sender, uint256 amount0, uint256 amount1, address indexed to);

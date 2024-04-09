@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity >=0.5.0;
 
-import '../../interfaces/IDeltaSwapPair.sol';
-import '../../interfaces/IDeltaSwapFactory.sol';
-import '../../libraries/DeltaSwapLibrary.sol';
+import '../../interfaces/IDeltaSwapV2Pair.sol';
+import '../../interfaces/IDeltaSwapV2Factory.sol';
+import '../../libraries/DeltaSwapV2Library.sol';
 
 import './Babylonian.sol';
 import './FullMath.sol';
 
 // library containing some math for dealing with the liquidity shares of a pair, e.g. computing their exact value
 // in terms of the underlying tokens
-library DeltaSwapLiquidityMathLibrary {
+library DeltaSwapV2LiquidityMathLibrary {
 
     // computes the direction and magnitude of the profit-maximizing trade
     function computeProfitMaximizingTrade(
@@ -48,9 +48,9 @@ library DeltaSwapLiquidityMathLibrary {
     ) view internal returns (uint256 reserveA, uint256 reserveB) {
         address pair;
         // first get reserves before the swap
-        (reserveA, reserveB, pair) = DeltaSwapLibrary.getReserves(factory, tokenA, tokenB);
+        (reserveA, reserveB, pair) = DeltaSwapV2Library.getReserves(factory, tokenA, tokenB);
 
-        require(reserveA > 0 && reserveB > 0, 'DeltaSwapArbitrageLibrary: ZERO_PAIR_RESERVES');
+        require(reserveA > 0 && reserveB > 0, 'DeltaSwapV2ArbitrageLibrary: ZERO_PAIR_RESERVES');
 
         // then compute how much to swap to arb to the true price
         (bool aToB, uint256 amountIn) = computeProfitMaximizingTrade(truePriceTokenA, truePriceTokenB, reserveA, reserveB);
@@ -59,14 +59,14 @@ library DeltaSwapLiquidityMathLibrary {
             return (reserveA, reserveB);
         }
 
-        uint256 fee = DeltaSwapLibrary.calcPairTradingFee(amountIn, reserveA, reserveB, pair);
+        uint256 fee = DeltaSwapV2Library.calcPairTradingFee(amountIn, reserveA, reserveB, pair);
         // now affect the trade to the reserves
         if (aToB) {
-            uint256 amountOut = DeltaSwapLibrary.getAmountOut(amountIn, reserveA, reserveB, fee);
+            uint256 amountOut = DeltaSwapV2Library.getAmountOut(amountIn, reserveA, reserveB, fee);
             reserveA += amountIn;
             reserveB -= amountOut;
         } else {
-            uint256 amountOut = DeltaSwapLibrary.getAmountOut(amountIn, reserveB, reserveA, fee);
+            uint256 amountOut = DeltaSwapV2Library.getAmountOut(amountIn, reserveB, reserveA, fee);
             reserveB += amountIn;
             reserveA -= amountOut;
         }
@@ -104,9 +104,9 @@ library DeltaSwapLiquidityMathLibrary {
         address tokenB,
         uint256 liquidityAmount
     ) internal view returns (uint256 tokenAAmount, uint256 tokenBAmount) {
-        (uint256 reservesA, uint256 reservesB, address _pair) = DeltaSwapLibrary.getReserves(factory, tokenA, tokenB);
-        IDeltaSwapPair pair = IDeltaSwapPair(_pair);
-        bool feeOn = IDeltaSwapFactory(factory).feeTo() != address(0);
+        (uint256 reservesA, uint256 reservesB, address _pair) = DeltaSwapV2Library.getReserves(factory, tokenA, tokenB);
+        IDeltaSwapV2Pair pair = IDeltaSwapV2Pair(_pair);
+        bool feeOn = IDeltaSwapV2Factory(factory).feeTo() != address(0);
         uint256 kLast = feeOn ? pair.kLast() : 0;
         uint256 totalSupply = pair.totalSupply();
         return computeLiquidityValue(reservesA, reservesB, totalSupply, liquidityAmount, feeOn, kLast);
@@ -125,8 +125,8 @@ library DeltaSwapLiquidityMathLibrary {
         uint256 tokenAAmount,
         uint256 tokenBAmount
     ) {
-        bool feeOn = IDeltaSwapFactory(factory).feeTo() != address(0);
-        IDeltaSwapPair pair = IDeltaSwapPair(DeltaSwapLibrary.pairFor(factory, tokenA, tokenB));
+        bool feeOn = IDeltaSwapV2Factory(factory).feeTo() != address(0);
+        IDeltaSwapV2Pair pair = IDeltaSwapV2Pair(DeltaSwapV2Library.pairFor(factory, tokenA, tokenB));
         uint256 kLast = feeOn ? pair.kLast() : 0;
         uint256 totalSupply = pair.totalSupply();
 

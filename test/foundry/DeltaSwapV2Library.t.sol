@@ -3,10 +3,10 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import "../../contracts/libraries/DeltaSwapLibrary.sol";
+import "../../contracts/libraries/DeltaSwapV2Library.sol";
 import "../../contracts/libraries/DSMath.sol";
 
-contract DeltaSwapLibraryTest is Test {
+contract DeltaSwapV2LibraryTest is Test {
 
     function testCalcTradeLiquidity(uint128 amount, bool isToken0) public {
         uint256 reserve0 = 1_000_000_000_000 * 1e18;

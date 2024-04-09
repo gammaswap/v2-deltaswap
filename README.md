@@ -27,7 +27,7 @@ Built with solidity version 0.8.19 because Arbitrum doesn't support 0.8.21
     *must use second init code hash when running foundry tests.
 
 ## Note 
-If code is updated print init code hash for hardhat tests from DeltaSwapFactory.spec.ts. Uncomment the part in the BeforeEach statement. This is the first init_code_hash shown in DeltaSwapLibrary.sol.
+If code is updated print init code hash for hardhat tests from DeltaSwapV2Factory.spec.ts. Uncomment the part in the BeforeEach statement. This is the first init_code_hash shown in DeltaSwapLibrary.sol.
 For foundry tests uncomment the part in DeltaSwapSetup.sol initDeltaSwap. This is the second init code hash.
 
 The difference in initcode hashes for foundry tests and hardhat tests seems to be because of foundry inserting metadata into the solidity code, which makes the code compile to a different bytecode and unrecognized by the router contract.
