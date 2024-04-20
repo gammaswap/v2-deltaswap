@@ -27,8 +27,8 @@ contract DeltaSwapV2Router02 is DeltaSwapV2Router01, IDeltaSwapV2Router02 {
             address(this),
             deadline
         );
-        DSTransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
-        IWETH(WETH).withdraw(amountETH);
+        DSTransferHelper.safeTransfer(token, to, IDSERC20(token).balanceOf(address(this)));
+        IDSWETH(WETH).withdraw(amountETH);
         DSTransferHelper.safeTransferETH(to, amountETH);
     }
     function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
@@ -59,7 +59,7 @@ contract DeltaSwapV2Router02 is DeltaSwapV2Router01, IDeltaSwapV2Router02 {
             { // scope to avoid stack too deep errors
                 (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
                 (uint256 reserveInput, uint256 reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-                amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput;
+                amountInput = IDSERC20(input).balanceOf(address(pair)) - reserveInput;
                 uint256 fee = DeltaSwapV2Library.calcPairTradingFee(amountInput, reserveInput, reserveOutput, address(pair));
                 amountOutput = DeltaSwapV2Library.getAmountOut(amountInput, reserveInput, reserveOutput, fee);
             }
@@ -78,10 +78,10 @@ contract DeltaSwapV2Router02 is DeltaSwapV2Router01, IDeltaSwapV2Router02 {
         DSTransferHelper.safeTransferFrom(
             path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amountIn
         );
-        uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
+        uint256 balanceBefore = IDSERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
+            IDSERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
@@ -99,12 +99,12 @@ contract DeltaSwapV2Router02 is DeltaSwapV2Router01, IDeltaSwapV2Router02 {
     {
         require(path[0] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
         uint256 amountIn = msg.value;
-        IWETH(WETH).deposit{value: amountIn}();
-        assert(IWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amountIn));
-        uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
+        IDSWETH(WETH).deposit{value: amountIn}();
+        assert(IDSWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amountIn));
+        uint256 balanceBefore = IDSERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
+            IDSERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
@@ -125,9 +125,9 @@ contract DeltaSwapV2Router02 is DeltaSwapV2Router01, IDeltaSwapV2Router02 {
             path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amountIn
         );
         _swapSupportingFeeOnTransferTokens(path, address(this));
-        uint256 amountOut = IERC20(WETH).balanceOf(address(this));
+        uint256 amountOut = IDSERC20(WETH).balanceOf(address(this));
         require(amountOut >= amountOutMin, 'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
-        IWETH(WETH).withdraw(amountOut);
+        IDSWETH(WETH).withdraw(amountOut);
         DSTransferHelper.safeTransferETH(to, amountOut);
     }
 

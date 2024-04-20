@@ -3,7 +3,7 @@ pragma solidity =0.8.21;
 
 import './libraries/DSMath.sol';
 import './libraries/UQ112x112.sol';
-import './interfaces/IERC20.sol';
+import './interfaces/IDSERC20.sol';
 import './interfaces/IDeltaSwapV2Pair.sol';
 import './interfaces/IDeltaSwapV2Factory.sol';
 import './interfaces/IDeltaSwapV2Callee.sol';
@@ -14,7 +14,7 @@ import './DeltaSwapV2ERC20.sol';
 /// @notice x*y=k AMM implementation that streams fee yield to LPs and charges fees for swaps above a certain threshold
 contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
 
-    using LibStorage for LibStorage.Storage;
+    using DSLibStorage for DSLibStorage.Storage;
     using UQ112x112 for uint224;
 
     uint256 public constant override MINIMUM_LIQUIDITY = 10**3;
@@ -22,32 +22,8 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
 
     address public immutable override factory;
 
-    function price0CumulativeLast() external override view returns(uint256) {
-        return s.price0CumulativeLast;
-    }
-
-    function price1CumulativeLast() external override view returns(uint256) {
-        return s.price1CumulativeLast;
-    }
-
-    function kLast() external override view returns(uint256) {
-        return s.kLast;
-    }
-
-    function rootK0() external override view returns(uint112) {
-        return s.rootK0;
-    }
-
-    function gammaPool() external override view returns(address) {
-        return s.gammaPool;
-    }
-
-    function token0() external override view returns(address) {
-        return s.token0;
-    }
-
-    function token1() external override view returns(address) {
-        return s.token1;
+    constructor(address _factory) {
+        factory = _factory;
     }
 
     function getReserves() public override view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
@@ -85,10 +61,6 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
     function _safeTransfer(address token, address to, uint256 value) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'DeltaSwapV2: TRANSFER_FAILED');
-    }
-
-    constructor(address _factory) {
-        factory = _factory;
     }
 
     // called once by the factory at time of deployment
@@ -255,8 +227,8 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
     // this low-level function should be called from a contract which performs important safety checks
     function mint(address to) external override lock returns (uint256 liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
-        uint256 balance0 = IERC20(s.token0).balanceOf(address(this));
-        uint256 balance1 = IERC20(s.token1).balanceOf(address(this));
+        uint256 balance0 = IDSERC20(s.token0).balanceOf(address(this));
+        uint256 balance1 = IDSERC20(s.token1).balanceOf(address(this));
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
@@ -282,8 +254,8 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
         (uint112 _reserve0, uint112 _reserve1,) = getLPReserves(); // gas savings
         address _token0 = s.token0;                                // gas savings
         address _token1 = s.token1;                                // gas savings
-        uint256 balance0 = IERC20(_token0).balanceOf(address(this));
-        uint256 balance1 = IERC20(_token1).balanceOf(address(this));
+        uint256 balance0 = IDSERC20(_token0).balanceOf(address(this));
+        uint256 balance1 = IDSERC20(_token1).balanceOf(address(this));
         uint256 liquidity = s.balanceOf[address(this)];
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
@@ -294,8 +266,8 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
         _safeTransfer(_token1, to, amount1);
-        balance0 = IERC20(_token0).balanceOf(address(this));
-        balance1 = IERC20(_token1).balanceOf(address(this));
+        balance0 = IDSERC20(_token0).balanceOf(address(this));
+        balance1 = IDSERC20(_token1).balanceOf(address(this));
 
         (_reserve0, _reserve1) = _update(balance0, balance1, s.reserve0, s.reserve1, uint112(amount0), uint112(amount1), false);
         if (feeOn) s.kLast = (uint256(_reserve0) * _reserve1); // reserve0 and reserve1 are up-to-date
@@ -317,8 +289,8 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
             if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
             if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
             if (data.length > 0) IDeltaSwapV2Callee(to).deltaSwapCall(msg.sender, amount0Out, amount1Out, data);
-            balance0 = IERC20(_token0).balanceOf(address(this));
-            balance1 = IERC20(_token1).balanceOf(address(this));
+            balance0 = IDSERC20(_token0).balanceOf(address(this));
+            balance1 = IDSERC20(_token1).balanceOf(address(this));
         }
         uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
@@ -344,13 +316,41 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
     function skim(address to) external override lock {
         address _token0 = s.token0; // gas savings
         address _token1 = s.token1; // gas savings
-        _safeTransfer(_token0, to, IERC20(_token0).balanceOf(address(this)) - s.reserve0);
-        _safeTransfer(_token1, to, IERC20(_token1).balanceOf(address(this)) - s.reserve1);
+        _safeTransfer(_token0, to, IDSERC20(_token0).balanceOf(address(this)) - s.reserve0);
+        _safeTransfer(_token1, to, IDSERC20(_token1).balanceOf(address(this)) - s.reserve1);
     }
 
     // force reserves to match balances
     function sync() external override lock {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
-        _update(IERC20(s.token0).balanceOf(address(this)), IERC20(s.token1).balanceOf(address(this)), _reserve0, _reserve1, 0, 0, false);
+        _update(IDSERC20(s.token0).balanceOf(address(this)), IDSERC20(s.token1).balanceOf(address(this)), _reserve0, _reserve1, 0, 0, false);
+    }
+
+    function price0CumulativeLast() external override view returns(uint256) {
+        return s.price0CumulativeLast;
+    }
+
+    function price1CumulativeLast() external override view returns(uint256) {
+        return s.price1CumulativeLast;
+    }
+
+    function kLast() external override view returns(uint256) {
+        return s.kLast;
+    }
+
+    function rootK0() external override view returns(uint112) {
+        return s.rootK0;
+    }
+
+    function gammaPool() external override view returns(address) {
+        return s.gammaPool;
+    }
+
+    function token0() external override view returns(address) {
+        return s.token0;
+    }
+
+    function token1() external override view returns(address) {
+        return s.token1;
     }
 }

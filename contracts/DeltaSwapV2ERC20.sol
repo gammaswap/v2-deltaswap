@@ -2,9 +2,9 @@
 pragma solidity =0.8.21;
 
 import './interfaces/IDeltaSwapV2ERC20.sol';
-import "./storage/AppStorage.sol";
+import "./storage/DSAppStorage.sol";
 
-contract DeltaSwapV2ERC20 is AppStorage, IDeltaSwapV2ERC20 {
+contract DeltaSwapV2ERC20 is DSAppStorage, IDeltaSwapV2ERC20 {
     string public constant override name = 'DeltaSwap V2';
     string public constant override symbol = 'DS-V2';
     uint8 public constant override decimals = 18;

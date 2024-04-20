@@ -67,6 +67,44 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
         vm.stopPrank();
     }
 
+    function testSyncYield() public {
+        depositLiquidityInCFMM(addr1, 1e18, 1e18);
+        uint256 cfmmSupply = dsPair.totalSupply();
+        uint256 lastCFMMInvariant = 18446744073709551616; //type(uint64).max + 1
+        uint256 prevCFMMInvariant = 1e18;
+        uint256 lastCFMMFeeIndex = lastCFMMInvariant * cfmmSupply * 1e18 / (prevCFMMInvariant * cfmmSupply);
+        assertEq(lastCFMMFeeIndex, 18446744073709551616);
+        dsPair.sync();
+
+        uint256[] memory _reserves = new uint256[](2);
+        (_reserves[0], _reserves[1], ) = dsPair.getReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18);
+
+        (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18);
+
+        //(reserves1 + x) * reserves0 = 18446744073709551616 ** 2; x = 339282366920938463463
+        uint256 amountNeeded = uint256((18446744073709551616 ** 2)) / 1e18 - 1e18 + 5; // +5 to cause overflow otherwise it rounds down
+        IDSERC20(dsPair.token1()).transfer(address(dsPair), amountNeeded);
+        dsPair.sync();
+
+        (_reserves[0], _reserves[1], ) = dsPair.getReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
+
+        (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
+        assertApproxEqAbs(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18, 1e1);
+
+        vm.roll(28800/12);
+        vm.warp(block.timestamp + 28800);
+        dsPair.sync();
+
+        (_reserves[0], _reserves[1], ) = dsPair.getReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
+
+        (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
+    }
+
     function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
         (,, uint24 _dsFee, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();

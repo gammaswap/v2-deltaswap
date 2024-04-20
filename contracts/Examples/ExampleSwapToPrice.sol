@@ -4,7 +4,7 @@ pragma solidity =0.8.21;
 import './libraries/Babylonian.sol';
 import './libraries/DeltaSwapV2LiquidityMathLibrary.sol';
 
-import '../interfaces/IERC20.sol';
+import '../interfaces/IDSERC20.sol';
 import '../interfaces/IDeltaSwapV2Router01.sol';
 import '../interfaces/IDeltaSwapV2Pair.sol';
 import '../libraries/DSTransferHelper.sol';
