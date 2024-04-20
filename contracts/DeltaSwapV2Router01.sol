@@ -5,8 +5,8 @@ import './libraries/DSTransferHelper.sol';
 import './libraries/DeltaSwapV2Library.sol';
 import './interfaces/IDeltaSwapV2Factory.sol';
 import './interfaces/IDeltaSwapV2Router01.sol';
-import './interfaces/IERC20.sol';
-import './interfaces/IWETH.sol';
+import './interfaces/IDSERC20.sol';
+import './interfaces/IDSWETH.sol';
 
 contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
     address public immutable override factory;
@@ -89,8 +89,8 @@ contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
         );
         address pair = DeltaSwapV2Library.pairFor(factory, token, WETH);
         DSTransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
-        IWETH(WETH).deposit{value: amountETH}();
-        assert(IWETH(WETH).transfer(pair, amountETH));
+        IDSWETH(WETH).deposit{value: amountETH}();
+        assert(IDSWETH(WETH).transfer(pair, amountETH));
         liquidity = IDeltaSwapV2Pair(pair).mint(to);
         if (msg.value > amountETH) DSTransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);// refund dust eth, if any
     }
@@ -131,7 +131,7 @@ contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
             deadline
         );
         DSTransferHelper.safeTransfer(token, to, amountToken);
-        IWETH(WETH).withdraw(amountETH);
+        IDSWETH(WETH).withdraw(amountETH);
         DSTransferHelper.safeTransferETH(to, amountETH);
     }
     function removeLiquidityWithPermit(
@@ -211,8 +211,8 @@ contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
         require(path[0] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
         amounts = DeltaSwapV2Library.getAmountsOut(factory, msg.value, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
-        IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
+        IDSWETH(WETH).deposit{value: amounts[0]}();
+        assert(IDSWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
     }
     function swapTokensForExactETH(uint256 amountOut, uint256 amountInMax, address[] calldata path, address to, uint256 deadline)
@@ -227,7 +227,7 @@ contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
         require(amounts[0] <= amountInMax, 'DeltaSwapV2Router: EXCESSIVE_INPUT_AMOUNT');
         DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
-        IWETH(WETH).withdraw(amounts[amounts.length - 1]);
+        IDSWETH(WETH).withdraw(amounts[amounts.length - 1]);
         DSTransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
     function swapExactTokensForETH(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline)
@@ -242,7 +242,7 @@ contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
         require(amounts[amounts.length - 1] >= amountOutMin, 'DeltaSwapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
         DSTransferHelper.safeTransferFrom(path[0], msg.sender, DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
-        IWETH(WETH).withdraw(amounts[amounts.length - 1]);
+        IDSWETH(WETH).withdraw(amounts[amounts.length - 1]);
         DSTransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
     function swapETHForExactTokens(uint256 amountOut, address[] calldata path, address to, uint256 deadline)
@@ -256,8 +256,8 @@ contract DeltaSwapV2Router01 is IDeltaSwapV2Router01 {
         require(path[0] == WETH, 'DeltaSwapV2Router: INVALID_PATH');
         amounts = DeltaSwapV2Library.getAmountsIn(factory, amountOut, path);
         require(amounts[0] <= msg.value, 'DeltaSwapV2Router: EXCESSIVE_INPUT_AMOUNT');
-        IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
+        IDSWETH(WETH).deposit{value: amounts[0]}();
+        assert(IDSWETH(WETH).transfer(DeltaSwapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
         if (msg.value > amounts[0]) DSTransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);// refund dust eth, if any
     }

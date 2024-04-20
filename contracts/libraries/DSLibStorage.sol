@@ -4,7 +4,7 @@ pragma solidity >=0.8.4;
 /// @title Library containing global storage variables for GammaPools according to App Storage pattern
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
 /// @dev Structs are packed to minimize storage size
-library LibStorage {
+library DSLibStorage {
     struct Storage {
         address token0;
         address token1;
