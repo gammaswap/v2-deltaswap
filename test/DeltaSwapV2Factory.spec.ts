@@ -21,19 +21,19 @@ const formatObject = (obj: any) => {
 
 describe('DeltaSwapV2Factory', () => {
     let DeltaSwapPair: any;
-    let DeltaSwapV2Proxy: any;
+    let DSProxy: any;
     let wallet: any;
     let other: any;
     let factory: Contract
 
     beforeEach(async () => {
         DeltaSwapPair = await ethers.getContractFactory("DeltaSwapV2Pair");
-        DeltaSwapV2Proxy = await ethers.getContractFactory("DeltaSwapV2Proxy");
+        DSProxy = await ethers.getContractFactory("DSProxy");
         [wallet, other] = await ethers.getSigners();
         const fixture = await factoryFixture(wallet);
         factory = fixture.factory
         //console.log('============', formatObject(config), formatObject(userConfig));
-        //console.log("initCodeHash >> ", utils.keccak256(DeltaSwapV2Proxy.bytecode).toString());
+        //console.log("initCodeHash >> ", utils.keccak256(DSProxy.bytecode).toString());
     })
 
     it('feeTo, feeToSetter, allPairsLength', async () => {
@@ -44,7 +44,7 @@ describe('DeltaSwapV2Factory', () => {
     })
 
     async function createPair(tokens: [string, string]) {
-        const bytecode = `${DeltaSwapV2Proxy.bytecode}`
+        const bytecode = `${DSProxy.bytecode}`
         const create2Address = getCreate2Address(factory.address, tokens, bytecode)
         await expect(factory.createPair(...tokens))
             .to.emit(factory, 'PairCreated')

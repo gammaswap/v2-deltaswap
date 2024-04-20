@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import './interfaces/IDSBeacon.sol';
+import '../interfaces/IDSBeacon.sol';
 
 /// @dev This contract implements a proxy that gets the implementation address for each call from a beacon
-contract DeltaSwapV2Proxy {
+contract DSProxy {
     // An immutable address for the beacon to avoid unnecessary SLOADs before each delegate call.
     address private immutable _beacon;
 
