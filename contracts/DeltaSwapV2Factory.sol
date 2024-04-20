@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
-import '@openzeppelin/contracts/proxy/beacon/IBeacon.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
+import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
+import './interfaces/IDSBeacon.sol';
 import './libraries/DeltaSwapV2Library.sol';
 import './interfaces/IDeltaSwapV2Factory.sol';
 import './DeltaSwapV2Pair.sol';
@@ -13,7 +13,7 @@ import './DeltaSwapV2Proxy.sol';
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
 /// @notice Factory contract to create DeltaSwapV2Pairs.
 /// @dev All DeltaSwapV2Pair contracts are unique by token pair
-contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IBeacon, Ownable2Step {
+contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IDSBeacon, Ownable2Step {
     address private _implementation;
 
     /// @dev Emitted when the implementation returned by the beacon is changed.
