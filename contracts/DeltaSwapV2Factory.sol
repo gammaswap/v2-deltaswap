@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: GPL-v3
 pragma solidity =0.8.21;
 
-import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@gammaswap/v1-core/contracts/libraries/AddressCalculator.sol';
 import './interfaces/IDSBeacon.sol';
-import './libraries/DeltaSwapV2Library.sol';
 import './interfaces/IDeltaSwapV2Factory.sol';
+import './libraries/DeltaSwapV2Library.sol';
+import './utils/DSProxy.sol';
+import "./utils/DSOwnable2Step.sol";
 import './DeltaSwapV2Pair.sol';
-import './DeltaSwapV2Proxy.sol';
 
 /// @title DeltaSwapV2Factory contract
 /// @author Daniel D. Alcarraz (https://github.com/0xDanr)
 /// @notice Factory contract to create DeltaSwapV2Pairs.
 /// @dev All DeltaSwapV2Pair contracts are unique by token pair
-contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IDSBeacon, Ownable2Step {
+contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IDSBeacon, DSOwnable2Step {
     address private _implementation;
 
     /// @dev Emitted when the implementation returned by the beacon is changed.
@@ -30,7 +30,7 @@ contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IDSBeacon, Ownable2Step {
 
     uint16 public override gsProtocolId = 3;
 
-    constructor(address _feeToSetter, address _gammaPoolSetter, address _gsFactory) Ownable(msg.sender) {
+    constructor(address _feeToSetter, address _gammaPoolSetter, address _gsFactory) DSOwnable(msg.sender) {
         feeToSetter = _feeToSetter;
         gammaPoolSetter = _gammaPoolSetter;
         gsFactory = _gsFactory;
@@ -46,7 +46,7 @@ contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IDSBeacon, Ownable2Step {
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         require(token0 != address(0), 'DeltaSwapV2: ZERO_ADDRESS');
         require(getPair[token0][token1] == address(0), 'DeltaSwapV2: PAIR_EXISTS'); // single check is sufficient
-        bytes memory bytecode = type(DeltaSwapV2Proxy).creationCode;
+        bytes memory bytecode = type(DSProxy).creationCode;
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)

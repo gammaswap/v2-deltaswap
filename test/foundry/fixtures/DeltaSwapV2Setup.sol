@@ -30,7 +30,7 @@ contract DeltaSwapV2Setup is Test {
         dsRouter = new DeltaSwapV2Router02(address(dsFactory), weth);
 
         dsPair = DeltaSwapV2Pair(createPair(address(usdc), address(wbtc)));
-        /*bytes memory bytecode = type(DeltaSwapV2Proxy).creationCode;
+        /*bytes memory bytecode = type(DSProxy).creationCode;
         bytes32 initCode = keccak256(bytecode);
         console.log("initCode");
         console.logBytes32(initCode);
