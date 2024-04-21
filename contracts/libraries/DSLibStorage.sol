@@ -12,8 +12,10 @@ library DSLibStorage {
         uint8 unlocked; // 8 bits
 
         address gammaPool;
-        uint24 gsFee; // GammaPool swap fee
-        uint24 dsFee; // Fee on large trades
+        bool stream0; // Stream donations of token0 as yield
+        bool stream1; // Stream donations of token1 as yield
+        uint16 gsFee; // GammaPool swap fee
+        uint16 dsFee; // Fee on large trades
         uint24 dsFeeThreshold; // 0.003% of liquidity
         uint24 yieldPeriod; // 8 hours in seconds
 

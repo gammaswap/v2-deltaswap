@@ -92,9 +92,9 @@ contract DeltaSwapV2Factory is IDeltaSwapV2Factory, IDSBeacon, DSOwnable2Step {
         feeToSetter = _feeToSetter;
     }
 
-    function setFeeParameters(address pair, uint24 gsFee, uint24 dsFee, uint24 dsFeeThreshold, uint24 yieldPeriod) external override {
+    function setFeeParameters(address pair, bool stream0, bool stream1, uint16 gsFee, uint16 dsFee, uint24 dsFeeThreshold, uint24 yieldPeriod) external override {
         require(msg.sender == feeToSetter, 'DeltaSwapV2: FORBIDDEN');
-        IDeltaSwapV2Pair(pair).setFeeParameters(gsFee, dsFee, dsFeeThreshold, yieldPeriod);
+        IDeltaSwapV2Pair(pair).setFeeParameters(stream0, stream1, gsFee, dsFee, dsFeeThreshold, yieldPeriod);
     }
 
     function feeInfo() external override view returns (address,uint16) {

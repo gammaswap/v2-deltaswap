@@ -80,7 +80,12 @@ contract DeltaSwapV2Setup is Test {
     }
 
     function updateDSFeeThreshold(uint24 dsFeeThreshold) public {
-        (,uint24 _gsFee, uint24 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, dsFeeThreshold, _yieldPeriod);
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee,, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, _gsFee, _dsFee, dsFeeThreshold, _yieldPeriod);
+    }
+
+    function updateStreamDonations(bool _stream0, bool _stream1) public {
+        (,,, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, _gsFee, _dsFee, _dsFeeThreshold, _yieldPeriod);
     }
 }

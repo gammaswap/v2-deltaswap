@@ -25,7 +25,7 @@ interface IDeltaSwapV2Factory {
 
     function setGSFactory(address factory) external;
     function setGSProtocolId(uint16 protocolId) external;
-    function setFeeParameters(address pair, uint24 gsFee, uint24 dsFee, uint24 dsFeeThreshold, uint24 yieldPeriod) external;
+    function setFeeParameters(address pair, bool stream0, bool stream1, uint16 gsFee, uint16 dsFee, uint24 dsFeeThreshold, uint24 yieldPeriod) external;
     function setGammaPoolSetter(address) external;
     function updateGammaPool(address tokenA, address tokenB) external;
 }
