@@ -92,7 +92,7 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
         assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
 
         (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
-        assertApproxEqAbs(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18, 1e1);
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
 
         vm.roll(28800/12);
         vm.warp(block.timestamp + 28800);

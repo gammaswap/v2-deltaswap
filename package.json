@@ -1,6 +1,6 @@
 {
   "name": "@gammaswap/v2-deltaswap",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "description": "GammaSwap feeless and yield streaming spot DEX",
   "main": "index.js",
   "publishConfig": {
