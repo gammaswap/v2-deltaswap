@@ -70,17 +70,21 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
         _initializeDomainSeparator();
     }
 
-    function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external override {
+    function setFeeParameters(bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external override {
         require(msg.sender == factory, 'DeltaSwapV2: FORBIDDEN');
         require(_yieldPeriod > 0, 'DeltaSwapV2: YIELD_PERIOD');
+        s.stream0 = _stream0;
+        s.stream1 = _stream1;
         s.gsFee = _gsFee;
         s.dsFee = _dsFee;
         s.dsFeeThreshold = _dsFeeThreshold;
         s.yieldPeriod = _yieldPeriod;
     }
 
-    function getFeeParameters() external view returns(address _gammaPool, uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) {
+    function getFeeParameters() external view returns(address _gammaPool, bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) {
         _gammaPool = s.gammaPool;
+        _stream0 = s.stream0;
+        _stream1 = s.stream1;
         _gsFee = s.gsFee;
         _dsFee = s.dsFee;
         _dsFeeThreshold = s.dsFeeThreshold;
@@ -323,7 +327,10 @@ contract DeltaSwapV2Pair is DeltaSwapV2ERC20, IDeltaSwapV2Pair {
     // force reserves to match balances
     function sync() external override lock {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves();
-        _update(IDSERC20(s.token0).balanceOf(address(this)), IDSERC20(s.token1).balanceOf(address(this)), _reserve0, _reserve1, 0, 0, false);
+        (uint256 _balance0, uint256 _balance1) = (IDSERC20(s.token0).balanceOf(address(this)), IDSERC20(s.token1).balanceOf(address(this)));
+        uint112 _deposit0 = !s.stream0 && _balance0 > _reserve0 ? uint112(_balance0 - _reserve0) : 0;
+        uint112 _deposit1 = !s.stream1 && _balance1 > _reserve1 ? uint112(_balance1 - _reserve0) : 0;
+        _update(_balance0, _balance1, _reserve0, _reserve1, _deposit0, _deposit1, _deposit0 > 0 || _deposit1 > 0);
     }
 
     function price0CumulativeLast() external override view returns(uint256) {

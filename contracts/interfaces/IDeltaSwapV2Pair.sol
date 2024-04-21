@@ -36,8 +36,8 @@ interface IDeltaSwapV2Pair is IDeltaSwapV2ERC20 {
 
     function initialize(address, address) external;
 
-    function setFeeParameters(uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external;
-    function getFeeParameters() external view returns(address _gammaPool, uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod);
+    function setFeeParameters(bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) external;
+    function getFeeParameters() external view returns(address _gammaPool, bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod);
     function gammaPool() external view returns (address);
     function setGammaPool(address gammaPool) external;
 

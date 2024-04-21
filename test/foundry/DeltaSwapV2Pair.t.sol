@@ -67,7 +67,47 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
         vm.stopPrank();
     }
 
-    function testSyncYield() public {
+    function testSreamDonations() public {
+        depositLiquidityInCFMM(addr1, 1e18, 1e18);
+        uint256 cfmmSupply = dsPair.totalSupply();
+        uint256 lastCFMMInvariant = 18446744073709551616; //type(uint64).max + 1
+        uint256 prevCFMMInvariant = 1e18;
+        uint256 lastCFMMFeeIndex = lastCFMMInvariant * cfmmSupply * 1e18 / (prevCFMMInvariant * cfmmSupply);
+        assertEq(lastCFMMFeeIndex, 18446744073709551616);
+        dsPair.sync();
+
+        uint256[] memory _reserves = new uint256[](2);
+        (_reserves[0], _reserves[1], ) = dsPair.getReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18);
+
+        (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18);
+
+        updateStreamDonations(false, true);
+
+        //(reserves1 + x) * reserves0 = 18446744073709551616 ** 2; x = 339282366920938463463
+        uint256 amountNeeded = uint256((18446744073709551616 ** 2)) / 1e18 - 1e18 + 5; // +5 to cause overflow otherwise it rounds down
+        IDSERC20(dsPair.token1()).transfer(address(dsPair), amountNeeded);
+        dsPair.sync();
+
+        (_reserves[0], _reserves[1], ) = dsPair.getReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
+
+        (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
+        assertApproxEqAbs(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18, 1e1);
+
+        vm.roll(28800/12);
+        vm.warp(block.timestamp + 28800);
+        dsPair.sync();
+
+        (_reserves[0], _reserves[1], ) = dsPair.getReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
+
+        (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
+    }
+
+    function testSyncDonations() public {
         depositLiquidityInCFMM(addr1, 1e18, 1e18);
         uint256 cfmmSupply = dsPair.totalSupply();
         uint256 lastCFMMInvariant = 18446744073709551616; //type(uint64).max + 1
@@ -92,7 +132,7 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
         assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
 
         (_reserves[0], _reserves[1], ) = dsPair.getLPReserves();
-        assertApproxEqAbs(DSMath.sqrt(_reserves[0]*_reserves[1]), 1e18, 1e1);
+        assertEq(DSMath.sqrt(_reserves[0]*_reserves[1]), 18446744073709551616);
 
         vm.roll(28800/12);
         vm.warp(block.timestamp + 28800);
@@ -107,7 +147,7 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
 
     function testCalcTradingFee(uint112 tradeLiquidity, uint112 lastLiquidityTradedEMA, uint112 lastLiquidityEMA) public {
         uint256 fee = dsPair.calcTradingFee(tradeLiquidity, lastLiquidityTradedEMA, lastLiquidityEMA);
-        (,, uint24 _dsFee, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
+        (,,,, uint16 _dsFee, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
         if(DSMath.max(tradeLiquidity, lastLiquidityTradedEMA) >= uint256(lastLiquidityEMA) * _dsFeeThreshold / 1e8) {// if trade >= 2% of liquidity, charge 0.3% fee => 1% of liquidity value, ~4.04% px change and 2.3% slippage
             assertEq(fee,_dsFee);
         } else {
@@ -473,7 +513,7 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
         updateDSFeeThreshold(2100000);
         vm.stopPrank();
 
-        (,,, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
+        (,,,,, uint24 _dsFeeThreshold,) = dsPair.getFeeParameters();
         assertEq(_dsFeeThreshold, 2100000);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
@@ -785,11 +825,11 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
 
     function testTradingDSFees() public {
         vm.startPrank(address(dsFactory.feeToSetter()));
-        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, 1000, _dsFeeThreshold, _yieldPeriod);// fee is 10%
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, _gsFee, 1000, _dsFeeThreshold, _yieldPeriod);// fee is 10%
         vm.stopPrank();
 
-        (,,_dsFee,,) = dsPair.getFeeParameters();
+        (,,,,_dsFee,,) = dsPair.getFeeParameters();
         assertEq(_dsFee, 1000);
 
         depositLiquidityInCFMM(addr1, 100*1e18, 100*1e18);
@@ -816,40 +856,40 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
     }
 
     function testDSFeesThresholdForbidden() public {
-        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
         assertNotEq(_dsFeeThreshold, 21000);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwapV2: FORBIDDEN");
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, _dsFee, 21000, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, _gsFee, _dsFee, 21000, _yieldPeriod);
         vm.stopPrank();
 
-        (,, , uint24 dsFeeThreshold,) = dsPair.getFeeParameters();
+        (,,,, , uint24 dsFeeThreshold,) = dsPair.getFeeParameters();
         assertEq(_dsFeeThreshold, dsFeeThreshold);
     }
 
     function testDSFees() public {
-        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
         assertEq(_dsFee, 30);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, 50, _dsFeeThreshold, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, _gsFee, 50, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        (,, _dsFee,,) = dsPair.getFeeParameters();
+        (,,,, _dsFee,,) = dsPair.getFeeParameters();
         assertEq(_dsFee, 50);
     }
 
     function testDSFeesForbidden() public {
-        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
         assertNotEq(_dsFee, 50);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwapV2: FORBIDDEN");
-        dsFactory.setFeeParameters(address(dsPair), _gsFee, 5, _dsFeeThreshold, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, _gsFee, 5, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        (,, uint24 dsFee,,) = dsPair.getFeeParameters();
+        (,,,, uint16 dsFee,,) = dsPair.getFeeParameters();
         assertEq(_dsFee, dsFee);
     }
 
@@ -904,27 +944,27 @@ contract DeltaSwapV2PairTest is DeltaSwapV2Setup {
     }
 
     function testSetGSFee() public {
-        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
         assertEq(_gsFee, 30);
 
         vm.startPrank(address(dsFactory.feeToSetter()));
-        dsFactory.setFeeParameters(address(dsPair), 5, _dsFee, _dsFeeThreshold, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, 5, _dsFee, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        (,_gsFee,,,) = dsPair.getFeeParameters();
+        (,,,_gsFee,,,) = dsPair.getFeeParameters();
         assertEq(_gsFee, 5);
     }
 
     function testSetGSFeeError() public {
-        (,uint24 _gsFee, uint24 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
+        (,bool _stream0, bool _stream1, uint16 _gsFee, uint16 _dsFee, uint24 _dsFeeThreshold, uint24 _yieldPeriod) = dsPair.getFeeParameters();
         assertNotEq(_gsFee, 5);
 
         vm.startPrank(addr1);
         vm.expectRevert("DeltaSwapV2: FORBIDDEN");
-        dsFactory.setFeeParameters(address(dsPair), 50, _dsFee, _dsFeeThreshold, _yieldPeriod);
+        dsFactory.setFeeParameters(address(dsPair), _stream0, _stream1, 50, _dsFee, _dsFeeThreshold, _yieldPeriod);
         vm.stopPrank();
 
-        (,uint24 gsFee,,,) = dsPair.getFeeParameters();
+        (,,,uint16 gsFee,,,) = dsPair.getFeeParameters();
         assertEq(_gsFee, gsFee);
     }
 
