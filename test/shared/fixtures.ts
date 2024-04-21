@@ -74,7 +74,7 @@ export async function pairFixture(wallet: any): Promise<PairFixture> {
     const token0 = tokenAisToken0 ? tokenA : tokenB
     const token1 = tokenAisToken0 ? tokenB : tokenA
 
-    await (await factory.setFeeParameters(pair.address, 30, 30, 2000000, 28800)).wait(); // threshold set to 2%
+    await (await factory.setFeeParameters(pair.address, false, false, 30, 30, 2000000, 28800)).wait(); // threshold set to 2%
 
     return { factory, token0, token1, pair }
 }
@@ -135,7 +135,7 @@ export async function v2Fixture(wallet: any): Promise<V2Fixture> {
     const WETHPairAddress = await factoryV2.getPair(WETH.address, WETHPartner.address)
     const WETHPair = DeltaSwapPair.attach(WETHPairAddress);
 
-    await (await factoryV2.setFeeParameters(pair.address, 30, 30, 2000000, 28800)).wait(); // threshold set to 2%
+    await (await factoryV2.setFeeParameters(pair.address, false, false, 30, 30, 2000000, 28800)).wait(); // threshold set to 2%
 
     return {
         token0,
